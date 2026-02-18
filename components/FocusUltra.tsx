@@ -95,11 +95,13 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
       <button
         onClick={exitFocusMode}
         style={{ 
-          top: 'calc(env(safe-area-inset-top) + 12px)', 
+          position: 'fixed',
+          top: 'calc(env(safe-area-inset-top, 0px) + 12px)', 
           right: '12px',
-          zIndex: 2147483647 
+          zIndex: 2147483647,
+          pointerEvents: 'auto'
         }}
-        className="fixed bg-[#000000] border border-[#C9A227] text-[#C9A227] px-4 py-2 rounded-sm active:scale-95 transition-all shadow-none hover:bg-[#C9A227] hover:text-black pointer-events-auto"
+        className="bg-[#000000] border border-[#C9A227] text-[#C9A227] px-4 py-2 rounded-sm active:scale-95 transition-all shadow-none hover:bg-[#C9A227] hover:text-black"
         aria-label="Sair do Modo Foco"
       >
         <span className="text-[10px] font-black uppercase tracking-widest">SAIR</span>
