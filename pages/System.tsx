@@ -11,7 +11,8 @@ import {
   Download, Upload, Trash2, User, Monitor, Plus, Activity, 
   Clock, ToggleLeft, Shield, LogIn, LogOut, RefreshCw, Key, 
   Wifi, Edit2, Check, X, Database, Terminal, AlertTriangle,
-  Dumbbell, BookOpen, GraduationCap, Briefcase, Palette
+  Dumbbell, BookOpen, GraduationCap, Briefcase, Palette,
+  UserPlus
 } from 'lucide-react';
 
 interface SystemProps {
@@ -35,6 +36,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(cloud.getCurrentUser());
   const [authEmail, setAuthEmail] = useState('');
   const [authPass, setAuthPass] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false); // Toggle Login/Register
   const [authLoading, setAuthLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -88,16 +90,23 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
 
   // --- AUTH HANDLERS ---
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
     setAuthError('');
     try {
-      const user = await cloud.login(authEmail, authPass);
+      let user;
+      if (isRegistering) {
+        user = await cloud.register(authEmail, authPass);
+      } else {
+        user = await cloud.login(authEmail, authPass);
+      }
       setCurrentUser(user);
       await handleSync();
+      // Clear sensitive fields
+      setAuthPass('');
     } catch (err: any) {
-      setAuthError(err.message || 'Falha na autenticação');
+      setAuthError(err.message || 'Falha na operação de segurança');
     } finally {
       setAuthLoading(false);
     }
@@ -357,7 +366,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
                </div>
             </Card>
 
-            {/* ACESSO CORPORATIVO (LOGIN/SYNC) */}
+            {/* ACESSO CORPORATIVO (LOGIN/REGISTER/SYNC) */}
             <Card accentBorder={!!currentUser} className="flex flex-col justify-between">
                {currentUser ? (
                  <>
@@ -388,30 +397,50 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
                    </div>
                  </>
                ) : (
-                 <form onSubmit={handleLogin} className="space-y-3">
-                    <div className="flex items-center gap-2 mb-2">
-                       <Key size={14} className="text-zinc-500" />
-                       <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Acesso Corporativo</span>
+                 <form onSubmit={handleAuthSubmit} className="space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                       <div className="flex items-center gap-2">
+                          <Key size={14} className="text-zinc-500" />
+                          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                            {isRegistering ? 'Cadastro de Agente' : 'Acesso Corporativo'}
+                          </span>
+                       </div>
+                       <button 
+                         type="button" 
+                         onClick={() => { setIsRegistering(!isRegistering); setAuthError(''); }}
+                         className="text-[8px] font-bold uppercase tracking-wider text-[var(--accent-color)] hover:text-white transition-colors"
+                       >
+                         {isRegistering ? 'Já tenho conta' : 'Criar Conta'}
+                       </button>
                     </div>
+                    
                     <div className="space-y-2">
                       <input 
-                         type="email" placeholder="ID Corporativo" required
+                         type="email" placeholder="E-mail" required
                          className="w-full bg-[#121212] border border-zinc-800 rounded p-2 text-xs text-white focus:border-[var(--accent-color)] outline-none placeholder:text-zinc-700"
                          value={authEmail} onChange={e => setAuthEmail(e.target.value)}
                        />
                        <input 
-                         type="password" placeholder="Senha" required
+                         type="password" placeholder="Senha (Min 6 chars)" required
+                         minLength={6}
                          className="w-full bg-[#121212] border border-zinc-800 rounded p-2 text-xs text-white focus:border-[var(--accent-color)] outline-none placeholder:text-zinc-700"
                          value={authPass} onChange={e => setAuthPass(e.target.value)}
                        />
                     </div>
-                    {authError && <p className="text-[8px] text-red-500 font-bold uppercase">{authError}</p>}
+                    
+                    {authError && <p className="text-[8px] text-red-500 font-bold uppercase animate-pulse">{authError}</p>}
+                    
                     <button 
                       type="submit" 
                       disabled={authLoading}
-                      className="w-full bg-zinc-800 text-zinc-300 py-2 rounded text-[10px] font-black uppercase tracking-widest hover:bg-[var(--accent-color)] hover:text-black transition-all disabled:opacity-50"
+                      className="w-full bg-zinc-800 text-zinc-300 py-2 rounded text-[10px] font-black uppercase tracking-widest hover:bg-[var(--accent-color)] hover:text-black transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {authLoading ? 'Autenticando...' : 'Iniciar Sessão'}
+                      {authLoading ? (
+                        <RefreshCw className="animate-spin" size={12} />
+                      ) : (
+                        isRegistering ? <UserPlus size={12} /> : <LogIn size={12} />
+                      )}
+                      {authLoading ? 'Processando...' : (isRegistering ? 'Cadastrar' : 'Iniciar Sessão')}
                     </button>
                  </form>
                )}
