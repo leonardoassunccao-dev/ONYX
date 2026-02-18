@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Onyx</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/onyxBoot.css">
+    <style>
+      :root {
+        --onyx-black: #000000;
+        --onyx-panel: #050505;
+        --onyx-dim: #1a1a1a;
+        
+        /* Theme Variables (Default: Gold) */
+        --accent-color: #D4AF37;
+        --accent-rgb: 212, 175, 55;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--onyx-black);
+        color: #ffffff;
+        margin: 0;
+        overflow-x: hidden;
+      }
+      
+      /* Smooth Theme Transitions */
+      *, *::before, *::after {
+        transition-property: color, background-color, border-color, stroke, fill, box-shadow;
+        transition-duration: 200ms;
+        transition-timing-function: ease-in-out;
+      }
+      
+      /* HUD Typography */
+      .font-mono-hud {
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      /* Neon Glow Effects (Dynamic) */
+      .neon-text {
+        color: var(--accent-color);
+        text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
+      }
+      .neon-border {
+        border: 1px solid rgba(var(--accent-rgb), 0.3);
+        box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.1) inset;
+      }
+      .neon-border-glow:hover {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.2), 0 0 5px rgba(var(--accent-rgb), 0.2) inset;
+      }
+
+      /* Progress Bars */
+      .hud-progress-bg {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .hud-progress-fill {
+        background: var(--accent-color);
+        box-shadow: 0 0 10px var(--accent-color);
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #000000;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 0px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-color);
+      }
+
+      /* Animations */
+      @keyframes scanline {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+      }
+      .hud-scanline::after {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(to bottom, transparent 50%, rgba(var(--accent-rgb), 0.03) 51%, transparent 52%);
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 10;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.574.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
+    "dexie": "https://esm.sh/dexie@^4.3.0",
+    "dexie-react-hooks": "https://esm.sh/dexie-react-hooks@^4.2.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root">
+      <div style="height: 100vh; width: 100vw; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; font-family: monospace; text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px;">
+        <div style="width: 40px; height: 1px; background: #333; margin-bottom: 20px;"></div>
+        INITIALIZING CORE...
+      </div>
+    </div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

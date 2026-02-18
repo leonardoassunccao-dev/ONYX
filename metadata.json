@@ -1,0 +1,9 @@
+{
+  "name": "Onyx",
+  "short_name": "Onyx",
+  "description": "Strategic Bruce Wayne Tech Ops Personal Suite",
+  "theme_color": "#0B0B0D",
+  "background_color": "#0B0B0D",
+  "display": "standalone",
+  "requestFramePermissions": []
+}
