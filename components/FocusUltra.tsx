@@ -91,10 +91,15 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
       className="fixed inset-0 z-[99999] bg-black text-white flex flex-col items-center justify-center cursor-default select-none"
       onMouseMove={handleMouseMove}
     >
-      {/* Mobile/Global Exit Button - Always Visible */}
+      {/* Mobile/Global Exit Button - Always Visible & Safe Area Respected */}
       <button
         onClick={exitFocusMode}
-        className="fixed top-3 right-3 z-[999999] bg-[#000000] border border-[#C9A227] text-[#C9A227] px-4 py-2 rounded-sm active:scale-95 transition-all shadow-none hover:bg-[#C9A227] hover:text-black"
+        style={{ 
+          top: 'calc(env(safe-area-inset-top) + 12px)', 
+          right: '12px',
+          zIndex: 2147483647 
+        }}
+        className="fixed bg-[#000000] border border-[#C9A227] text-[#C9A227] px-4 py-2 rounded-sm active:scale-95 transition-all shadow-none hover:bg-[#C9A227] hover:text-black pointer-events-auto"
         aria-label="Sair do Modo Foco"
       >
         <span className="text-[10px] font-black uppercase tracking-widest">SAIR</span>
@@ -137,10 +142,13 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
         )}
       </div>
 
-      {/* Subtle Bottom Status */}
-      <div className="fixed bottom-8 text-[8px] font-black text-[#1a1a1a] uppercase tracking-[0.5em]">
+      {/* Subtle Bottom Status - Fallback Exit Trigger */}
+      <button 
+        onClick={exitFocusMode}
+        className="fixed bottom-8 text-[8px] font-black text-[#1a1a1a] uppercase tracking-[0.5em] hover:text-[#C9A227] transition-colors cursor-pointer active:scale-95 bg-transparent border-none outline-none"
+      >
          Onyx System Active
-      </div>
+      </button>
     </div>
   );
 };
