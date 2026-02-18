@@ -70,3 +70,18 @@ export function useHabits() {
   };
 
   const updateHabit = async (id: any, data: Partial<Habit>) => {
+    if (!user) return;
+    await updateDoc(doc(db, 'users', user.uid, 'habits', id), data);
+  };
+
+  return {
+    habits,
+    getTodayHabits,
+    getProgress,
+    addCheckin,
+    toggleBooleanHabit,
+    createHabit,
+    deleteHabit,
+    updateHabit
+  };
+}
