@@ -1,11 +1,28 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { Habit, HabitCheckin } from '../types';
 
 export function useHabits() {
-  const habits = useLiveQuery(() => db.habits.toArray()) || [];
-  const checkins = useLiveQuery(() => db.habit_checkins.toArray()) || [];
+  const { user } = useAuth();
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [checkins, setCheckins] = useState<HabitCheckin[]>([]);
   const todayStr = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubHabits = onSnapshot(collection(db, 'users', user.uid, 'habits'), (snap) => {
+      setHabits(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+    });
+
+    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'habit_checkins'), (snap) => {
+      setCheckins(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+    });
+
+    return () => { unsubHabits(); unsubCheckins(); };
+  }, [user]);
 
   const getTodayHabits = () => {
     const dayOfWeek = new Date().getDay();
@@ -20,37 +37,41 @@ export function useHabits() {
     return { current, percent, isMet };
   };
 
-  const addCheckin = async (habitId: number, value: number) => {
-    return await db.habit_checkins.add({
+  const addCheckin = async (habitId: any, value: number) => {
+    if (!user) return;
+    await addDoc(collection(db, 'users', user.uid, 'habit_checkins'), {
       habitId,
       date: todayStr,
-      value
+      value,
+      updatedAt: Date.now()
     });
   };
 
-  const toggleBooleanHabit = async (habitId: number) => {
+  const toggleBooleanHabit = async (habitId: any) => {
+    if (!user) return;
     const dailyCheckins = checkins.filter(c => c.habitId === habitId && c.date === todayStr);
     if (dailyCheckins.length > 0) {
-      await db.habit_checkins.where('habitId').equals(habitId).and(c => c.date === todayStr).delete();
+      for (const checkin of dailyCheckins) {
+        await deleteDoc(doc(db, 'users', user.uid, 'habit_checkins', checkin.id as string));
+      }
     } else {
       await addCheckin(habitId, 1);
     }
   };
 
   const createHabit = async (habit: Omit<Habit, 'id' | 'createdAt'>) => {
-    return await db.habits.add({
-      ...habit,
-      createdAt: Date.now()
-    });
+    if (!user) return;
+    await addDoc(collection(db, 'users', user.uid, 'habits'), { ...habit, createdAt: Date.now() });
   };
 
-  const deleteHabit = async (id: number) => {
-    await db.habits.delete(id);
-    await db.habit_checkins.where('habitId').equals(id).delete();
+  const deleteHabit = async (id: any) => {
+    if (!user) return;
+    await deleteDoc(doc(db, 'users', user.uid, 'habits', id));
   };
 
-  const updateHabit = async (id: number, data: Partial<Habit>) => {
-    return await db.habits.update(id, data);
+  const updateHabit = async (id: any, data: Partial<Habit>) => {
+    if (!user) return;
+    await updateDoc(doc(db, 'users', user.uid, 'habits', id), data);
   };
 
   return {

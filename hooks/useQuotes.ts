@@ -1,67 +1,56 @@
-import { useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { Quote } from '../types';
 
 export function useQuotes() {
-  const quotes = useLiveQuery(() => db.quotes.toArray()) || [];
-  
-  // Logic to get the Quote of the Day (Read Only)
-  const dailyQuote = useLiveQuery(async () => {
-    const allQuotes = await db.quotes.toArray();
-    if (allQuotes.length === 0) return null;
+  const { user } = useAuth();
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
 
-    const storedIndex = await db.app_state.get('daily_quote_index');
-    let currentIndex = storedIndex?.value || 0;
-    
-    // Ensure index is within bounds (in case quotes were deleted)
-    if (currentIndex >= allQuotes.length) {
-        currentIndex = 0;
-    }
-
-    return allQuotes[currentIndex];
-  }, [quotes.length]); // Re-run if quotes list changes (e.g. deletion) or app_state updates
-
-  // Logic to rotate the quote if it's a new day (Write Operation)
   useEffect(() => {
-    const checkAndRotateDay = async () => {
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Transaction ensures we read and update atomically without race conditions
-        await (db as any).transaction('rw', [db.app_state, db.quotes], async () => {
-            const storedDate = await db.app_state.get('daily_quote_date');
-            
-            // If date is missing or different from today
-            if (!storedDate || storedDate.value !== today) {
-                const allQuotes = await db.quotes.toArray();
-                if (allQuotes.length === 0) return;
+    if (!user) return;
 
-                const storedIndex = await db.app_state.get('daily_quote_index');
-                let currentIndex = storedIndex?.value || 0;
+    const unsub = onSnapshot(collection(db, 'users', user.uid, 'quotes'), (snap) => {
+      const qs = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+      setQuotes(qs);
+    });
 
-                // Rotate index
-                currentIndex = (currentIndex + 1) % allQuotes.length;
-                
-                // Update state
-                await db.app_state.put({ key: 'daily_quote_date', value: today });
-                await db.app_state.put({ key: 'daily_quote_index', value: currentIndex });
-            }
-        });
-      } catch (error) {
-        console.error("Failed to rotate daily quote:", error);
+    return () => unsub();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || quotes.length === 0) return;
+
+    const checkDailyQuote = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const settingsRef = doc(db, 'users', user.uid, 'system', 'quotes_meta');
+      const settingsSnap = await getDoc(settingsRef);
+      
+      let meta = settingsSnap.data() || { daily_quote_date: '', daily_quote_index: 0 };
+      
+      if (meta.daily_quote_date !== today) {
+        meta.daily_quote_index = (meta.daily_quote_index + 1) % quotes.length;
+        meta.daily_quote_date = today;
+        await setDoc(settingsRef, meta, { merge: true });
       }
+
+      const index = meta.daily_quote_index < quotes.length ? meta.daily_quote_index : 0;
+      setDailyQuote(quotes[index]);
     };
 
-    checkAndRotateDay();
-  }, []); // Run once on mount
+    checkDailyQuote();
+  }, [user, quotes]);
 
   const addQuote = async (text: string, author?: string) => {
-    await db.quotes.add({ text, author, isCustom: true });
+    if (!user) return;
+    await addDoc(collection(db, 'users', user.uid, 'quotes'), { text, author, isCustom: true, updatedAt: Date.now() });
   };
 
-  const deleteQuote = async (id: number) => {
-    await db.quotes.delete(id);
+  const deleteQuote = async (id: any) => {
+    if (!user) return;
+    await deleteDoc(doc(db, 'users', user.uid, 'quotes', id));
   };
 
   return {

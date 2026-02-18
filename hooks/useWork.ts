@@ -10,14 +10,14 @@ export function useWork() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'users', user.uid, 'work', 'items'), orderBy('date', 'desc'));
+    const q = query(collection(db, 'users', user.uid, 'work_tasks'), orderBy('date', 'desc'));
     const unsub = onSnapshot(q, (snap) => setTasks(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
     return () => unsub();
   }, [user]);
 
   const addTask = async (title: string) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'work', 'items'), {
+    await addDoc(collection(db, 'users', user.uid, 'work_tasks'), {
       title,
       date: new Date().toISOString().split('T')[0],
       done: false,
@@ -28,12 +28,12 @@ export function useWork() {
 
   const toggleTask = async (task: WorkTask) => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'work', 'items', task.id as string), { done: !task.done });
+    await updateDoc(doc(db, 'users', user.uid, 'work_tasks', task.id as unknown as string), { done: !task.done });
   };
 
   const deleteTask = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'work', 'items', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'work_tasks', id));
   };
 
   return { tasks, addTask, toggleTask, deleteTask };

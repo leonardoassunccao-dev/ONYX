@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { db } from '../db';
 import { Settings } from '../types';
 import Card from '../components/Card';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, Trash2, Edit2, TrendingUp, DollarSign, Wallet, CreditCard, Lock, ArrowRight, Activity } from 'lucide-react';
+import { useFinance } from '../hooks/useFinance';
+import { Plus, Trash2, Edit2, TrendingUp, DollarSign, Wallet, CreditCard, Lock, Activity } from 'lucide-react';
 
 const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
+  const { transactions, fixedExpenses, salary, patrimony, addTransaction, deleteTransaction, addFixedExpense, deleteFixedExpense, updateSalary, updatePatrimony } = useFinance();
+
   const [editingSalary, setEditingSalary] = useState(false);
   const [salaryInput, setSalaryInput] = useState('');
 
@@ -13,84 +14,49 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
   const [patrimonyCurrent, setPatrimonyCurrent] = useState('');
   const [patrimonyGoal, setPatrimonyGoal] = useState('');
 
-  // Modals / Forms
   const [showFixedForm, setShowFixedForm] = useState(false);
   const [fixedFormData, setFixedFormData] = useState({ title: '', amount: '' });
 
   const [showVarForm, setShowVarForm] = useState(false);
   const [varFormData, setVarFormData] = useState({ category: '', amount: '', date: new Date().toISOString().split('T')[0] });
 
-  // --- DATA FETCHING ---
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const currentMonthTransactions = transactions.filter(t => t.date.startsWith(currentMonthStr) && t.type === 'expense');
   
-  // Salary
-  const salaryState = useLiveQuery(() => db.app_state.get('monthly_salary'));
-  const monthlySalary = salaryState?.value || 0;
-
-  // Patrimony
-  const patCurrentState = useLiveQuery(() => db.app_state.get('patrimony_current'));
-  const patGoalState = useLiveQuery(() => db.app_state.get('patrimony_goal'));
-  const currentPatrimony = patCurrentState?.value || 0;
-  const goalPatrimony = patGoalState?.value || 0;
-
-  // Expenses
-  const fixedExpenses = useLiveQuery(() => db.fixed_expenses.toArray()) || [];
-  
-  const currentMonthStr = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const variableExpenses = useLiveQuery(() => 
-    db.finance_transactions
-      .where('date').startsWith(currentMonthStr)
-      .and(t => t.type === 'expense')
-      .reverse()
-      .toArray()
-  ) || [];
-
-  // --- CALCULATIONS ---
   const totalFixed = fixedExpenses.reduce((sum, item) => sum + item.amount, 0);
-  const totalVariable = variableExpenses.reduce((sum, item) => sum + item.amount, 0);
+  const totalVariable = currentMonthTransactions.reduce((sum, item) => sum + item.amount, 0);
   const totalExpenses = totalFixed + totalVariable;
-  const balance = monthlySalary - totalExpenses;
-  const percentUsed = monthlySalary > 0 ? (totalExpenses / monthlySalary) * 100 : 0;
-  const percentPatrimony = goalPatrimony > 0 ? (currentPatrimony / goalPatrimony) * 100 : 0;
-
-  // --- HANDLERS ---
+  const balance = salary - totalExpenses;
+  const percentUsed = salary > 0 ? (totalExpenses / salary) * 100 : 0;
+  const percentPatrimony = patrimony.goal > 0 ? (patrimony.current / patrimony.goal) * 100 : 0;
 
   const saveSalary = async () => {
     const val = parseFloat(salaryInput);
-    if (!isNaN(val)) {
-      await db.app_state.put({ key: 'monthly_salary', value: val });
-    }
+    if (!isNaN(val)) await updateSalary(val);
     setEditingSalary(false);
   };
 
   const savePatrimony = async () => {
     const cur = parseFloat(patrimonyCurrent);
     const goal = parseFloat(patrimonyGoal);
-    
-    if (!isNaN(cur)) await db.app_state.put({ key: 'patrimony_current', value: cur });
-    if (!isNaN(goal)) await db.app_state.put({ key: 'patrimony_goal', value: goal });
-    
+    if (!isNaN(cur) || !isNaN(goal)) {
+        await updatePatrimony(isNaN(cur) ? patrimony.current : cur, isNaN(goal) ? patrimony.goal : goal);
+    }
     setEditingPatrimony(false);
   };
 
-  const addFixedExpense = async (e: React.FormEvent) => {
+  const handleAddFixed = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fixedFormData.title || !fixedFormData.amount) return;
-    await db.fixed_expenses.add({
-      title: fixedFormData.title,
-      amount: parseFloat(fixedFormData.amount)
-    });
+    await addFixedExpense({ title: fixedFormData.title, amount: parseFloat(fixedFormData.amount) });
     setFixedFormData({ title: '', amount: '' });
     setShowFixedForm(false);
   };
 
-  const deleteFixed = async (id: number) => {
-    if (confirm('Remover custo fixo?')) await db.fixed_expenses.delete(id);
-  };
-
-  const addVariableExpense = async (e: React.FormEvent) => {
+  const handleAddVar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!varFormData.category || !varFormData.amount) return;
-    await db.finance_transactions.add({
+    await addTransaction({
       type: 'expense',
       category: varFormData.category,
       amount: parseFloat(varFormData.amount),
@@ -100,10 +66,6 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
     setShowVarForm(false);
   };
 
-  const deleteVariable = async (id: number) => {
-    if (confirm('Remover gasto variável?')) await db.finance_transactions.delete(id);
-  };
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
       <header>
@@ -111,7 +73,6 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
         <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1">Gestão de Recursos & Patrimônio</p>
       </header>
 
-      {/* 1. SALÁRIO */}
       <section className="bg-[#0B0B0B] border border-[#1a1a1a] rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-6 group hover:border-[#D4AF37]/30 transition-all">
         <div className="flex items-center gap-4">
           <div className="p-4 bg-zinc-900 rounded-full text-[#D4AF37] border border-zinc-800">
@@ -127,14 +88,14 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
                    className="bg-[#121212] border border-zinc-800 rounded p-2 text-xl font-black text-white outline-none focus:border-[#D4AF37] w-40"
                    value={salaryInput}
                    onChange={e => setSalaryInput(e.target.value)}
-                   placeholder={monthlySalary.toString()}
+                   placeholder={salary.toString()}
                  />
                  <button onClick={saveSalary} className="bg-[#D4AF37] text-black px-4 rounded font-bold text-xs uppercase tracking-wider">OK</button>
                </div>
             ) : (
                <div className="flex items-center gap-3">
-                 <h3 className="text-3xl font-black text-white tracking-tight">R$ {monthlySalary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
-                 <button onClick={() => { setSalaryInput(monthlySalary.toString()); setEditingSalary(true); }} className="text-zinc-600 hover:text-[#D4AF37] transition-colors">
+                 <h3 className="text-3xl font-black text-white tracking-tight">R$ {salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                 <button onClick={() => { setSalaryInput(salary.toString()); setEditingSalary(true); }} className="text-zinc-600 hover:text-[#D4AF37] transition-colors">
                     <Edit2 size={14} />
                  </button>
                </div>
@@ -143,7 +104,6 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
         </div>
       </section>
 
-      {/* 4. RESUMO AUTOMÁTICO (Placed here for high visibility) */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
          <Card className="relative overflow-hidden group">
             <div className="flex justify-between items-start mb-4">
@@ -196,11 +156,11 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
                   <div>
                     <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Meta de Patrimônio</p>
                     <div className="flex items-center gap-2">
-                       <p className="text-xl font-black text-[#E8E8E8]">R$ {currentPatrimony.toLocaleString('pt-BR', { notation: "compact" })}</p>
-                       <span className="text-zinc-600 text-[10px] font-bold">/ {goalPatrimony.toLocaleString('pt-BR', { notation: "compact" })}</span>
+                       <p className="text-xl font-black text-[#E8E8E8]">R$ {patrimony.current.toLocaleString('pt-BR', { notation: "compact" })}</p>
+                       <span className="text-zinc-600 text-[10px] font-bold">/ {patrimony.goal.toLocaleString('pt-BR', { notation: "compact" })}</span>
                     </div>
                   </div>
-                  <button onClick={() => { setPatrimonyCurrent(currentPatrimony.toString()); setPatrimonyGoal(goalPatrimony.toString()); setEditingPatrimony(true); }}>
+                  <button onClick={() => { setPatrimonyCurrent(patrimony.current.toString()); setPatrimonyGoal(patrimony.goal.toString()); setEditingPatrimony(true); }}>
                      <TrendingUp size={20} className="text-[#D4AF37] hover:text-white transition-colors" />
                   </button>
                 </div>
@@ -214,8 +174,6 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* 2. GASTOS FIXOS */}
         <section className="space-y-4">
            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
               <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] flex items-center gap-2">
@@ -227,7 +185,7 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
            </div>
            
            {showFixedForm && (
-             <form onSubmit={addFixedExpense} className="bg-[#0B0B0B] p-4 border border-zinc-800 rounded-lg space-y-3 animate-in slide-in-from-top-2">
+             <form onSubmit={handleAddFixed} className="bg-[#0B0B0B] p-4 border border-zinc-800 rounded-lg space-y-3 animate-in slide-in-from-top-2">
                <input 
                  autoFocus
                  type="text" placeholder="Nome do Custo"
@@ -253,24 +211,15 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
                  <span className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">{expense.title}</span>
                  <div className="flex items-center gap-4">
                     <span className="text-xs font-bold text-white font-mono-hud">R$ {expense.amount.toFixed(2)}</span>
-                    <button onClick={() => deleteFixed(expense.id!)} className="text-zinc-700 hover:text-red-900 opacity-0 group-hover:opacity-100 transition-all">
+                    <button onClick={() => deleteFixedExpense(expense.id! as any)} className="text-zinc-700 hover:text-red-900 opacity-0 group-hover:opacity-100 transition-all">
                        <Trash2 size={12} />
                     </button>
                  </div>
                </div>
              ))}
-             {fixedExpenses.length === 0 && <p className="text-[9px] text-zinc-700 font-mono-hud text-center py-4">Nenhum custo fixo registrado.</p>}
-             
-             {fixedExpenses.length > 0 && (
-               <div className="flex justify-between items-center pt-2 border-t border-zinc-800/50 mt-2 px-3">
-                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Total Fixo</span>
-                  <span className="text-xs font-bold text-zinc-400 font-mono-hud">R$ {totalFixed.toFixed(2)}</span>
-               </div>
-             )}
            </div>
         </section>
 
-        {/* 3. GASTOS VARIÁVEIS */}
         <section className="space-y-4">
            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
               <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] flex items-center gap-2">
@@ -282,7 +231,7 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
            </div>
 
            {showVarForm && (
-             <form onSubmit={addVariableExpense} className="bg-[#0B0B0B] p-4 border border-zinc-800 rounded-lg space-y-3 animate-in slide-in-from-top-2">
+             <form onSubmit={handleAddVar} className="bg-[#0B0B0B] p-4 border border-zinc-800 rounded-lg space-y-3 animate-in slide-in-from-top-2">
                <input 
                  autoFocus
                  type="text" placeholder="Descrição do Gasto"
@@ -309,7 +258,7 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
            )}
 
            <div className="space-y-2">
-             {variableExpenses.map(expense => (
+             {currentMonthTransactions.map(expense => (
                <div key={expense.id} className="flex justify-between items-center bg-[#0B0B0B] border border-[#1a1a1a] p-3 rounded group hover:border-[#D4AF37]/20 transition-all">
                  <div className="flex flex-col">
                     <span className="text-[10px] font-black text-zinc-300 uppercase tracking-wider">{expense.category}</span>
@@ -317,23 +266,14 @@ const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
                  </div>
                  <div className="flex items-center gap-4">
                     <span className="text-xs font-bold text-white font-mono-hud">R$ {expense.amount.toFixed(2)}</span>
-                    <button onClick={() => deleteVariable(expense.id!)} className="text-zinc-700 hover:text-red-900 opacity-0 group-hover:opacity-100 transition-all">
+                    <button onClick={() => deleteTransaction(expense.id! as any)} className="text-zinc-700 hover:text-red-900 opacity-0 group-hover:opacity-100 transition-all">
                        <Trash2 size={12} />
                     </button>
                  </div>
                </div>
              ))}
-             {variableExpenses.length === 0 && <p className="text-[9px] text-zinc-700 font-mono-hud text-center py-4">Nenhum gasto variável este mês.</p>}
-             
-             {variableExpenses.length > 0 && (
-               <div className="flex justify-between items-center pt-2 border-t border-zinc-800/50 mt-2 px-3">
-                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Total Variável</span>
-                  <span className="text-xs font-bold text-zinc-400 font-mono-hud">R$ {totalVariable.toFixed(2)}</span>
-               </div>
-             )}
            </div>
         </section>
-
       </div>
     </div>
   );

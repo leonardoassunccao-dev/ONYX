@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../db';
+import React, { useState } from 'react';
 import { PacerWorkout, Settings } from '../types';
 import Card from '../components/Card';
 import { Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { usePacer } from '../hooks/usePacer';
 
 const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
-  const [workouts, setWorkouts] = useState<PacerWorkout[]>([]);
+  const { workouts, addWorkout, toggleWorkout, deleteWorkout } = usePacer();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     type: 'run' as PacerWorkout['type'],
@@ -13,34 +13,10 @@ const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
     plannedDate: new Date().toISOString().split('T')[0]
   });
 
-  useEffect(() => {
-    fetchWorkouts();
-  }, []);
-
-  const fetchWorkouts = async () => {
-    const data = await db.pacer_workouts.orderBy('plannedDate').reverse().toArray();
-    setWorkouts(data);
-  };
-
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    await db.pacer_workouts.add({
-      ...formData,
-      done: false
-    });
+    await addWorkout({ ...formData, done: false });
     setShowForm(false);
-    fetchWorkouts();
-  };
-
-  const toggleWorkout = async (w: PacerWorkout) => {
-    await db.pacer_workouts.update(w.id!, { done: !w.done });
-    fetchWorkouts();
-  };
-
-  const deleteW = async (id: number) => {
-    if (!confirm('Excluir treino?')) return;
-    await db.pacer_workouts.delete(id);
-    fetchWorkouts();
   };
 
   return (
@@ -94,7 +70,7 @@ const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
               <p className={`font-black text-zinc-200 uppercase tracking-widest text-xs ${w.done ? 'line-through text-zinc-600' : ''}`}>{w.type}</p>
               <p className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">{w.plannedDate} • {w.durationMin} MIN</p>
             </div>
-            <button onClick={() => deleteW(w.id!)} className="text-zinc-800 hover:text-red-900 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => deleteWorkout(w.id!)} className="text-zinc-800 hover:text-red-900 opacity-0 group-hover:opacity-100 transition-opacity">
               <Trash2 size={16} />
             </button>
           </div>

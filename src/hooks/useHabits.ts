@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, where } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { Habit, HabitCheckin } from '../types';
 
 export function useHabits() {
@@ -13,13 +13,13 @@ export function useHabits() {
   useEffect(() => {
     if (!user) return;
 
-    // Habits
-    const unsubHabits = onSnapshot(collection(db, 'users', user.uid, 'habits'), (snap) => {
+    // users/{uid}/habits/items
+    const unsubHabits = onSnapshot(collection(db, 'users', user.uid, 'habits', 'items'), (snap) => {
       setHabits(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
-    // Checkins (Optimization: Only load recent checkins or all? Firestore offline handles all fine usually)
-    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'habit_checkins'), (snap) => {
+    // users/{uid}/habits/checkins
+    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'habits', 'checkins'), (snap) => {
       setCheckins(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
@@ -41,7 +41,7 @@ export function useHabits() {
 
   const addCheckin = async (habitId: any, value: number) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'habit_checkins'), {
+    await addDoc(collection(db, 'users', user.uid, 'habits', 'checkins'), {
       habitId,
       date: todayStr,
       value,
@@ -52,11 +52,9 @@ export function useHabits() {
   const toggleBooleanHabit = async (habitId: any) => {
     if (!user) return;
     const dailyCheckins = checkins.filter(c => c.habitId === habitId && c.date === todayStr);
-    
     if (dailyCheckins.length > 0) {
-      // Delete checkin
       for (const checkin of dailyCheckins) {
-        await deleteDoc(doc(db, 'users', user.uid, 'habit_checkins', checkin.id as string));
+        await deleteDoc(doc(db, 'users', user.uid, 'habits', 'checkins', checkin.id as string));
       }
     } else {
       await addCheckin(habitId, 1);
@@ -65,18 +63,17 @@ export function useHabits() {
 
   const createHabit = async (habit: Omit<Habit, 'id' | 'createdAt'>) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'habits'), { ...habit, createdAt: Date.now() });
+    await addDoc(collection(db, 'users', user.uid, 'habits', 'items'), { ...habit, createdAt: Date.now() });
   };
 
   const deleteHabit = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'habits', id));
-    // Cleanup checkins? Optional for NoSQL, but good practice
+    await deleteDoc(doc(db, 'users', user.uid, 'habits', 'items', id));
   };
 
   const updateHabit = async (id: any, data: Partial<Habit>) => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'habits', id), data);
+    await updateDoc(doc(db, 'users', user.uid, 'habits', 'items', id), data);
   };
 
   return {

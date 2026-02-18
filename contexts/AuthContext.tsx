@@ -32,39 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("MIGRATING DATA...");
       const batch = writeBatch(firestore);
       
-      const migrateTable = async (tableName: string, collectionName: string, docName?: string) => {
+      const migrateTable = async (tableName: string, collectionName: string) => {
         const items = await (dexieDb as any).table(tableName).toArray();
-        if (docName && items.length > 0) {
-            // Single doc migration (profile, settings)
-            const docRef = doc(firestore, 'users', uid, collectionName, docName);
-            const { id, ...data } = items[0];
-            batch.set(docRef, { ...data, migratedAt: Date.now() }, { merge: true });
-        } else {
-            // Collection migration
-            items.forEach((item: any) => {
-                const docId = item.id ? item.id.toString() : doc(collection(firestore, 'users', uid, collectionName)).id;
-                const docRef = doc(firestore, 'users', uid, collectionName, docId);
-                const { id, ...data } = item;
-                batch.set(docRef, { ...data, migratedAt: Date.now() });
-            });
-        }
+        items.forEach((item: any) => {
+          const docId = item.id ? item.id.toString() : doc(collection(firestore, 'users', uid, collectionName)).id;
+          const docRef = doc(firestore, 'users', uid, collectionName, docId);
+          const { id, ...data } = item;
+          batch.set(docRef, { ...data, migratedAt: Date.now() });
+        });
       };
 
-      // Paths defined in requirement
-      await migrateTable('profile', 'profile', 'main');
-      await migrateTable('settings', 'system', 'settings');
-      await migrateTable('habits', 'habits/items'); // Fix path mapping
-      await migrateTable('habit_checkins', 'habits/checkins'); 
-      await migrateTable('finance_transactions', 'finance/transactions');
-      await migrateTable('fixed_expenses', 'finance/fixed_expenses');
-      await migrateTable('pacer_workouts', 'pacer/workouts');
-      await migrateTable('books', 'reading/books');
-      await migrateTable('reading_sessions', 'reading/sessions');
-      await migrateTable('study_sessions', 'study/sessions');
-      await migrateTable('work_tasks', 'work/items');
-      await migrateTable('session_goals', 'goals/items');
-      await migrateTable('goal_checkins', 'goals/checkins');
-      await migrateTable('quotes', 'system/quotes');
+      await migrateTable('profile', 'profile');
+      await migrateTable('settings', 'settings');
+      await migrateTable('habits', 'habits');
+      await migrateTable('habit_checkins', 'habit_checkins');
+      await migrateTable('finance_transactions', 'finance_transactions');
+      await migrateTable('fixed_expenses', 'fixed_expenses');
+      await migrateTable('pacer_workouts', 'pacer_workouts');
+      await migrateTable('books', 'books');
+      await migrateTable('reading_sessions', 'reading_sessions');
+      await migrateTable('study_sessions', 'study_sessions');
+      await migrateTable('work_tasks', 'work_tasks');
+      await migrateTable('session_goals', 'session_goals');
+      await migrateTable('goal_checkins', 'goal_checkins');
+      await migrateTable('quotes', 'quotes');
       
       batch.set(userSettingsRef, { migrated: true, updatedAt: Date.now() }, { merge: true });
       await batch.commit();

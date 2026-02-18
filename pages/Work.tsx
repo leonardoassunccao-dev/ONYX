@@ -1,46 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../db';
-import { WorkTask, Settings } from '../types';
+import React, { useState } from 'react';
+import { Settings } from '../types';
 import Card from '../components/Card';
 import { Plus, CheckCircle2, Circle, Trash2, Briefcase } from 'lucide-react';
+import { useWork } from '../hooks/useWork';
 
 const WorkPage: React.FC<{ settings: Settings }> = ({ settings }) => {
-  const [tasks, setTasks] = useState<WorkTask[]>([]);
+  const { tasks, addTask, toggleTask, deleteTask } = useWork();
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
-    const data = await db.work_tasks.orderBy('date').reverse().toArray();
-    setTasks(data);
-  };
-
-  const addTask = async (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle) return;
-    await db.work_tasks.add({
-      title: newTitle,
-      date: new Date().toISOString().split('T')[0],
-      done: false,
-      priority: 'med'
-    });
+    await addTask(newTitle);
     setNewTitle('');
     setShowForm(false);
-    fetchTasks();
-  };
-
-  const toggleTask = async (task: WorkTask) => {
-    await db.work_tasks.update(task.id!, { done: !task.done });
-    fetchTasks();
-  };
-
-  const deleteTask = async (id: number) => {
-    if (!confirm('Abortar tarefa?')) return;
-    await db.work_tasks.delete(id);
-    fetchTasks();
   };
 
   return (
@@ -54,7 +28,7 @@ const WorkPage: React.FC<{ settings: Settings }> = ({ settings }) => {
 
       {showForm && (
         <Card accentBorder title="Nova Diretriz Operacional">
-          <form onSubmit={addTask} className="flex gap-2">
+          <form onSubmit={handleAddTask} className="flex gap-2">
             <input 
               autoFocus
               type="text" 

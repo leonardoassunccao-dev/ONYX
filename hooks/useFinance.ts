@@ -14,22 +14,18 @@ export function useFinance() {
   useEffect(() => {
     if (!user) return;
 
-    // users/{uid}/finance/transactions
-    const qTrx = query(collection(db, 'users', user.uid, 'finance', 'transactions'), orderBy('date', 'desc'));
+    const qTrx = query(collection(db, 'users', user.uid, 'finance_transactions'), orderBy('date', 'desc'));
     const unsubTrx = onSnapshot(qTrx, (snap) => {
       setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
-    // users/{uid}/finance/fixed_expenses
-    // Using subcollection inside finance for organization
-    const qFixed = query(collection(db, 'users', user.uid, 'finance', 'fixed_expenses'));
+    const qFixed = query(collection(db, 'users', user.uid, 'fixed_expenses'));
     const unsubFixed = onSnapshot(qFixed, (snap) => {
       setFixedExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
-    // users/{uid}/finance/summary
-    const summaryRef = doc(db, 'users', user.uid, 'finance', 'summary');
-    const unsubSummary = onSnapshot(summaryRef, (snap) => {
+    const financeDocRef = doc(db, 'users', user.uid, 'system', 'finance');
+    const unsubFinance = onSnapshot(financeDocRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setSalary(data.salary || 0);
@@ -37,37 +33,37 @@ export function useFinance() {
       }
     });
 
-    return () => { unsubTrx(); unsubFixed(); unsubSummary(); };
+    return () => { unsubTrx(); unsubFixed(); unsubFinance(); };
   }, [user]);
 
   const addTransaction = async (trx: Omit<FinanceTransaction, 'id' | 'updatedAt'>) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'finance', 'transactions'), { ...trx, updatedAt: Date.now() });
+    await addDoc(collection(db, 'users', user.uid, 'finance_transactions'), { ...trx, updatedAt: Date.now() });
   };
 
   const deleteTransaction = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'finance', 'transactions', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'finance_transactions', id));
   };
 
   const addFixedExpense = async (exp: Omit<FixedExpense, 'id' | 'updatedAt'>) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'finance', 'fixed_expenses'), { ...exp, updatedAt: Date.now() });
+    await addDoc(collection(db, 'users', user.uid, 'fixed_expenses'), { ...exp, updatedAt: Date.now() });
   };
 
   const deleteFixedExpense = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'finance', 'fixed_expenses', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'fixed_expenses', id));
   };
 
   const updateSalary = async (val: number) => {
     if (!user) return;
-    await setDoc(doc(db, 'users', user.uid, 'finance', 'summary'), { salary: val }, { merge: true });
+    await setDoc(doc(db, 'users', user.uid, 'system', 'finance'), { salary: val }, { merge: true });
   };
 
   const updatePatrimony = async (current: number, goal: number) => {
     if (!user) return;
-    await setDoc(doc(db, 'users', user.uid, 'finance', 'summary'), { patrimony: { current, goal } }, { merge: true });
+    await setDoc(doc(db, 'users', user.uid, 'system', 'finance'), { patrimony: { current, goal } }, { merge: true });
   };
 
   return {

@@ -1,33 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../db';
-import { StudySession, Settings } from '../types';
+import React, { useState } from 'react';
+import { Settings } from '../types';
 import Card from '../components/Card';
 import { Plus, GraduationCap, Clock, Trash2 } from 'lucide-react';
+import { useStudy } from '../hooks/useStudy';
 
 const StudyPage: React.FC<{ settings: Settings }> = ({ settings }) => {
-  const [sessions, setSessions] = useState<StudySession[]>([]);
+  const { sessions, addSession, deleteSession } = useStudy();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ subject: '', minutes: 45 });
-
-  useEffect(() => {
-    fetchSessions();
-  }, []);
-
-  const fetchSessions = async () => {
-    const data = await db.study_sessions.orderBy('date').reverse().toArray();
-    setSessions(data);
-  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.subject) return;
-    await db.study_sessions.add({
-      ...formData,
-      date: new Date().toISOString().split('T')[0]
-    });
+    await addSession({ ...formData, date: new Date().toISOString().split('T')[0] });
     setFormData({ subject: '', minutes: 45 });
     setShowForm(false);
-    fetchSessions();
   };
 
   return (
@@ -76,7 +63,7 @@ const StudyPage: React.FC<{ settings: Settings }> = ({ settings }) => {
               <p className="text-[9px] text-zinc-500 uppercase font-black tracking-[0.2em]">{s.date} • {s.minutes} MIN</p>
             </div>
             <button 
-              onClick={async () => { if(confirm('Excluir log?')) { await db.study_sessions.delete(s.id!); fetchSessions(); } }}
+              onClick={() => { if(confirm('Excluir log?')) deleteSession(s.id!); }}
               className="opacity-0 group-hover:opacity-100 text-zinc-800 hover:text-red-900 transition-all"
             >
               <Trash2 size={16} />

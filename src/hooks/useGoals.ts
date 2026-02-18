@@ -17,23 +17,25 @@ export function useGoals(sessionFilter?: GoalSession) {
     if (!user) return;
 
     const qGoals = sessionFilter 
-      ? query(collection(db, 'users', user.uid, 'session_goals'), where('session', '==', sessionFilter))
-      : collection(db, 'users', user.uid, 'session_goals');
+      ? query(collection(db, 'users', user.uid, 'goals', 'items'), where('session', '==', sessionFilter))
+      : collection(db, 'users', user.uid, 'goals', 'items');
 
     const unsubGoals = onSnapshot(qGoals, (snap) => setGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'goal_checkins'), (snap) => setCheckins(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-    const unsubTemplates = onSnapshot(collection(db, 'users', user.uid, 'goal_templates'), (snap) => {
+    
+    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'goals', 'checkins'), (snap) => setCheckins(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
+    
+    // Templates can be global or user specific. Using user specific for sync simplicity.
+    const unsubTemplates = onSnapshot(collection(db, 'users', user.uid, 'goals', 'templates'), (snap) => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       setTemplates(sessionFilter ? all.filter((t: any) => t.session === sessionFilter) : all);
     });
     
-    // For finance goals
-    const unsubTrans = onSnapshot(collection(db, 'users', user.uid, 'finance_transactions'), (snap) => setTransactions(snap.docs.map(d => d.data())));
+    // For finance goals progress tracking
+    const unsubTrans = onSnapshot(collection(db, 'users', user.uid, 'finance', 'transactions'), (snap) => setTransactions(snap.docs.map(d => d.data())));
 
     return () => { unsubGoals(); unsubCheckins(); unsubTemplates(); unsubTrans(); };
   }, [user, sessionFilter]);
 
-  // ... Logic helpers (getISOWeek, calculateProgress) are identical but use state ...
   const getISOWeek = (date: Date) => {
     if (!date || isNaN(date.getTime())) return -1;
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -94,13 +96,13 @@ export function useGoals(sessionFilter?: GoalSession) {
 
   const addGoal = async (goal: any) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'session_goals'), { ...goal, createdAt: Date.now(), done: false });
+    await addDoc(collection(db, 'users', user.uid, 'goals', 'items'), { ...goal, createdAt: Date.now(), done: false });
   };
 
   const createFromTemplate = async (template: GoalTemplate) => {
     if (!user) return;
     const today = new Date().toISOString().split('T')[0];
-    await addDoc(collection(db, 'users', user.uid, 'session_goals'), {
+    await addDoc(collection(db, 'users', user.uid, 'goals', 'items'), {
       session: template.session,
       title: template.title,
       type: template.type,
@@ -118,17 +120,17 @@ export function useGoals(sessionFilter?: GoalSession) {
 
   const checkin = async (goalId: any, value: number, notes?: string) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'goal_checkins'), { goalId, date: todayStr, value, notes });
+    await addDoc(collection(db, 'users', user.uid, 'goals', 'checkins'), { goalId, date: todayStr, value, notes });
   };
 
   const deleteGoal = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'session_goals', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'goals', 'items', id));
   };
 
   const toggleActive = async (id: any, active: boolean) => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'session_goals', id), { active });
+    await updateDoc(doc(db, 'users', user.uid, 'goals', 'items', id), { active });
   };
 
   return { goals, templates, calculateProgress, addGoal, createFromTemplate, checkin, deleteGoal, toggleActive };

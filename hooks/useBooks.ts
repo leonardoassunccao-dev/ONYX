@@ -1,12 +1,29 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Book, ReadingSession } from '../types';
 
 export function useBooks() {
-  const books = useLiveQuery(() => db.books.orderBy('createdAt').reverse().toArray()) || [];
-  const sessions = useLiveQuery(() => db.reading_sessions.toArray()) || [];
-
+  const { user } = useAuth();
+  const [books, setBooks] = useState<Book[]>([]);
+  const [sessions, setSessions] = useState<ReadingSession[]>([]);
   const todayStr = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    if (!user) return;
+
+    const qBooks = query(collection(db, 'users', user.uid, 'books'), orderBy('createdAt', 'desc'));
+    const unsubBooks = onSnapshot(qBooks, (snap) => {
+      setBooks(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+    });
+
+    const unsubSessions = onSnapshot(collection(db, 'users', user.uid, 'reading_sessions'), (snap) => {
+      setSessions(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+    });
+
+    return () => { unsubBooks(); unsubSessions(); };
+  }, [user]);
 
   const getBookStats = (book: Book) => {
     const bookSessions = sessions.filter(s => s.bookId === book.id);
@@ -14,7 +31,6 @@ export function useBooks() {
       .filter(s => s.date === todayStr)
       .reduce((acc, s) => acc + s.pages, 0);
 
-    // Streak logic
     const dates = Array.from(new Set(bookSessions.map(s => s.date))).sort().reverse();
     let streak = 0;
     if (dates.length > 0) {
@@ -31,7 +47,6 @@ export function useBooks() {
       }
     }
 
-    // Projection
     let projection = null;
     if (book.pagesTotalOptional && book.dailyPagesGoal && book.dailyPagesGoal > 0) {
       const remaining = Math.max(book.pagesTotalOptional - book.currentPage, 0);
@@ -45,8 +60,9 @@ export function useBooks() {
   };
 
   const addBook = async (title: string, pagesTotal?: number) => {
+    if (!user) return;
     const today = new Date().toISOString().split('T')[0];
-    const newBookId = await db.books.add({
+    await addDoc(collection(db, 'users', user.uid, 'books'), {
       title,
       status: 'reading',
       createdAt: Date.now(),
@@ -55,34 +71,33 @@ export function useBooks() {
       dailyPagesGoal: 10,
       startedAt: today
     });
-    console.log("BOOK SAVED", newBookId);
-    return newBookId;
   };
 
-  const updateBook = async (id: number, data: Partial<Book>) => {
-    return await db.books.update(id, data);
+  const updateBook = async (id: any, data: Partial<Book>) => {
+    if (!user) return;
+    await updateDoc(doc(db, 'users', user.uid, 'books', id), data);
   };
 
-  const deleteBook = async (id: number) => {
-    if (!id) return;
-    await db.books.delete(id);
-    await db.reading_sessions.where('bookId').equals(id).delete();
+  const deleteBook = async (id: any) => {
+    if (!user) return;
+    await deleteDoc(doc(db, 'users', user.uid, 'books', id));
   };
 
-  const logSession = async (bookId: number, pages: number) => {
-    const book = await db.books.get(bookId);
-    if (!book) return;
-
-    await db.reading_sessions.add({
+  const logSession = async (bookId: any, pages: number) => {
+    if (!user) return;
+    await addDoc(collection(db, 'users', user.uid, 'reading_sessions'), {
       bookId,
       date: todayStr,
-      pages
+      pages,
+      updatedAt: Date.now()
     });
 
-    let newCurrent = (book.currentPage || 0) + pages;
-    if (book.pagesTotalOptional) newCurrent = Math.min(newCurrent, book.pagesTotalOptional);
-    
-    await db.books.update(bookId, { currentPage: newCurrent });
+    const book = books.find(b => b.id === bookId);
+    if (book) {
+      let newCurrent = (book.currentPage || 0) + pages;
+      if (book.pagesTotalOptional) newCurrent = Math.min(newCurrent, book.pagesTotalOptional);
+      await updateDoc(doc(db, 'users', user.uid, 'books', bookId), { currentPage: newCurrent });
+    }
   };
 
   return {

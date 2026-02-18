@@ -15,15 +15,11 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-// Components
 import OnyxLogo from './components/OnyxLogo';
 import SplashScreen from './components/SplashScreen';
 import FocusUltra from './components/FocusUltra';
 import FullscreenExitButton from './components/FullscreenExitButton';
-import UltraFocusExit from './components/UltraFocusExit';
-import SystemPage from './pages/System'; // Modified to serve as Login Page if needed? No, we will make a custom Login view inside App for better control.
 
-// Pages
 import TodayPage from './pages/Today';
 import FinancePage from './pages/Finance';
 import PacerPage from './pages/Pacer';
@@ -31,8 +27,8 @@ import ReadingPage from './pages/Reading';
 import StudyPage from './pages/Study';
 import WorkPage from './pages/Work';
 import RoutinePage from './pages/Routine';
+import SystemPage from './pages/System';
 
-// --- AUTHENTICATION COMPONENT ---
 const LoginScreen: React.FC = () => {
   const { login, register } = useAuth();
   const [email, setEmail] = useState('');
@@ -61,8 +57,7 @@ const LoginScreen: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-[#000000] flex flex-col items-center justify-center p-8">
       <OnyxLogo size={64} className="mb-8" />
-      <h1 className="text-2xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase mb-2">ONYX SYSTEM</h1>
-      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-12">Acesso Restrito // Identificação Requerida</p>
+      <h1 className="text-2xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase mb-12">BEM VINDO AO ONYX</h1>
       
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <input 
@@ -89,7 +84,7 @@ const LoginScreen: React.FC = () => {
           disabled={loading}
           className="w-full bg-[#D4AF37] text-black p-4 font-black text-xs uppercase tracking-[0.2em] hover:bg-white transition-all rounded"
         >
-          {loading ? 'Processando...' : (isRegistering ? 'Registrar Agente' : 'Iniciar Uplink')}
+          {loading ? 'Processando...' : (isRegistering ? 'Registrar Agente' : 'INICIAR')}
         </button>
       </form>
 
@@ -103,12 +98,10 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-// --- MAIN APP ---
 const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('today');
   
-  // Real-time Settings & Profile Hooks
   const [profile, setProfile] = useState<Profile>({ name: 'Agente', id: 0 });
   const [settings, setSettings] = useState<Settings>({ meetingMode: false, greetingsEnabled: true, accent: '#D4AF37' } as any);
   
@@ -116,22 +109,18 @@ const MainApp: React.FC = () => {
   const [meetingMode, setMeetingMode] = useState(false);
   const [isFocusUltra, setIsFocusUltra] = useState(false);
 
-  // Listen to User Profile & Settings
   useEffect(() => {
     if (!user) return;
     
-    // Profile
-    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'profile'), (doc) => {
+    // users/{uid}/profile/main
+    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'main'), (doc) => {
       if (doc.exists()) {
         const data = doc.data();
         setProfile({ name: data.name || 'Agente', id: 0 });
-      } else {
-        // Init profile if missing
-        // (In a real app, this might be handled by migration or backend trigger, here we just default)
       }
     });
 
-    // Settings
+    // users/{uid}/system/settings
     const unsubSettings = onSnapshot(doc(firestore, 'users', user.uid, 'system', 'settings'), (doc) => {
       if (doc.exists()) {
         const data = doc.data() as Settings;
@@ -140,11 +129,9 @@ const MainApp: React.FC = () => {
       }
     });
 
-    // Splash logic
     const splashSeen = sessionStorage.getItem('onyx_splash_seen');
     if (!splashSeen) setShowSplash(true);
 
-    // Load theme
     const savedTheme = localStorage.getItem('onyx_theme') as any;
     applyTheme(savedTheme || 'gold');
 
@@ -157,24 +144,16 @@ const MainApp: React.FC = () => {
   };
 
   const toggleMeetingMode = async () => {
-    // Optimistic UI handled by listener, but we trigger update
-    if (user) {
-      // We don't have a direct hook here, using firestore directly for this specific toggle
-      // Ideally move to a useSettings hook
-      // For now, simpler:
-      // setMeetingMode(!meetingMode); // Local toggle for speed
-      // await updateDoc(...)
-    }
+    // Logic can be added here if needed to lift state up
   };
 
   const enterFocusUltra = () => setIsFocusUltra(true);
   const exitFocusUltra = () => setIsFocusUltra(false);
-  const refreshAppData = () => {}; // No-op, realtime handles it
+  const refreshAppData = () => {};
 
   if (isFocusUltra) return <FocusUltra onExit={exitFocusUltra} />;
   if (showSplash) return <SplashScreen onFinish={handleSplashFinish} />;
 
-  // Render Logic ... (Same as before but simplified props)
   const renderContent = () => {
     switch (activeSection) {
       case 'today': return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;

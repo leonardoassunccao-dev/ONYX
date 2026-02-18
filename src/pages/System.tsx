@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Profile, Settings, Section } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { applyTheme } from '../utils/theme';
 import Card from '../components/Card';
 import { 
@@ -27,7 +27,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
     if (!user) return;
     const trimmed = tempName.trim();
     if (trimmed) {
-      await updateDoc(doc(db, 'users', user.uid, 'profile', 'profile'), { name: trimmed });
+      await setDoc(doc(db, 'users', user.uid, 'profile', 'profile'), { name: trimmed }, { merge: true });
     }
     setIsEditingName(false);
   };
@@ -39,7 +39,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
 
   const toggleMeetingMode = async () => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'system', 'settings'), { meetingMode: !settings.meetingMode });
+    await setDoc(doc(db, 'users', user.uid, 'system', 'settings'), { meetingMode: !settings.meetingMode }, { merge: true });
   };
 
   const handleThemeChange = (theme: 'gold' | 'silver' | 'emerald') => {

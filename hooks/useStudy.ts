@@ -10,19 +10,19 @@ export function useStudy() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'users', user.uid, 'study', 'sessions'), orderBy('date', 'desc'));
+    const q = query(collection(db, 'users', user.uid, 'study_sessions'), orderBy('date', 'desc'));
     const unsub = onSnapshot(q, (snap) => setSessions(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
     return () => unsub();
   }, [user]);
 
   const addSession = async (data: any) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'study', 'sessions'), { ...data, updatedAt: Date.now() });
+    await addDoc(collection(db, 'users', user.uid, 'study_sessions'), { ...data, updatedAt: Date.now() });
   };
 
   const deleteSession = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'study', 'sessions', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'study_sessions', id));
   };
 
   return { sessions, addSession, deleteSession };

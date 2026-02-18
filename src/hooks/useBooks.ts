@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { Book, ReadingSession } from '../types';
 
 export function useBooks() {
@@ -13,12 +13,12 @@ export function useBooks() {
   useEffect(() => {
     if (!user) return;
 
-    const qBooks = query(collection(db, 'users', user.uid, 'books'), orderBy('createdAt', 'desc'));
+    const qBooks = query(collection(db, 'users', user.uid, 'reading', 'books'), orderBy('createdAt', 'desc'));
     const unsubBooks = onSnapshot(qBooks, (snap) => {
       setBooks(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
-    const unsubSessions = onSnapshot(collection(db, 'users', user.uid, 'reading_sessions'), (snap) => {
+    const unsubSessions = onSnapshot(collection(db, 'users', user.uid, 'reading', 'sessions'), (snap) => {
       setSessions(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
@@ -62,7 +62,7 @@ export function useBooks() {
   const addBook = async (title: string, pagesTotal?: number) => {
     if (!user) return;
     const today = new Date().toISOString().split('T')[0];
-    await addDoc(collection(db, 'users', user.uid, 'books'), {
+    await addDoc(collection(db, 'users', user.uid, 'reading', 'books'), {
       title,
       status: 'reading',
       createdAt: Date.now(),
@@ -75,30 +75,29 @@ export function useBooks() {
 
   const updateBook = async (id: any, data: Partial<Book>) => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'books', id), data);
+    await updateDoc(doc(db, 'users', user.uid, 'reading', 'books', id), data);
   };
 
   const deleteBook = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'books', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'reading', 'books', id));
   };
 
   const logSession = async (bookId: any, pages: number) => {
     if (!user) return;
-    const book = books.find(b => b.id === bookId);
-    if (!book) return;
-
-    await addDoc(collection(db, 'users', user.uid, 'reading_sessions'), {
+    await addDoc(collection(db, 'users', user.uid, 'reading', 'sessions'), {
       bookId,
       date: todayStr,
       pages,
       updatedAt: Date.now()
     });
 
-    let newCurrent = (book.currentPage || 0) + pages;
-    if (book.pagesTotalOptional) newCurrent = Math.min(newCurrent, book.pagesTotalOptional);
-    
-    await updateDoc(doc(db, 'users', user.uid, 'books', bookId), { currentPage: newCurrent });
+    const book = books.find(b => b.id === bookId);
+    if (book) {
+      let newCurrent = (book.currentPage || 0) + pages;
+      if (book.pagesTotalOptional) newCurrent = Math.min(newCurrent, book.pagesTotalOptional);
+      await updateDoc(doc(db, 'users', user.uid, 'reading', 'books', bookId), { currentPage: newCurrent });
+    }
   };
 
   return {

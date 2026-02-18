@@ -12,8 +12,9 @@ export function useQuotes() {
   useEffect(() => {
     if (!user) return;
 
-    // Listen to Quotes
-    const unsub = onSnapshot(collection(db, 'users', user.uid, 'quotes'), (snap) => {
+    // users/{uid}/system/quotes (custom quotes) + Default Ones? 
+    // Simplified: Just use a collection for simplicity as requested by "users/{uid}/..." rule
+    const unsub = onSnapshot(collection(db, 'users', user.uid, 'system', 'quotes'), (snap) => {
       const qs = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       setQuotes(qs);
     });
@@ -21,7 +22,6 @@ export function useQuotes() {
     return () => unsub();
   }, [user]);
 
-  // Daily Quote Logic
   useEffect(() => {
     if (!user || quotes.length === 0) return;
 
@@ -33,7 +33,6 @@ export function useQuotes() {
       let meta = settingsSnap.data() || { daily_quote_date: '', daily_quote_index: 0 };
       
       if (meta.daily_quote_date !== today) {
-        // Rotate
         meta.daily_quote_index = (meta.daily_quote_index + 1) % quotes.length;
         meta.daily_quote_date = today;
         await setDoc(settingsRef, meta, { merge: true });
@@ -48,12 +47,12 @@ export function useQuotes() {
 
   const addQuote = async (text: string, author?: string) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'quotes'), { text, author, isCustom: true, updatedAt: Date.now() });
+    await addDoc(collection(db, 'users', user.uid, 'system', 'quotes'), { text, author, isCustom: true, updatedAt: Date.now() });
   };
 
   const deleteQuote = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'quotes', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'system', 'quotes', id));
   };
 
   return {
