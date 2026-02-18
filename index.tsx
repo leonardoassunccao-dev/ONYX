@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
@@ -26,3 +25,12 @@ root.render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Register Service Worker for PWA
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
+      .then(reg => console.log("SW registered", reg))
+      .catch(err => console.log("SW failed", err));
+  });
+}
