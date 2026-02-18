@@ -13,13 +13,11 @@ export function useHabits() {
   useEffect(() => {
     if (!user) return;
 
-    // users/{uid}/habits/items
-    const unsubHabits = onSnapshot(collection(db, 'users', user.uid, 'habits', 'items'), (snap) => {
+    const unsubHabits = onSnapshot(collection(db, 'users', user.uid, 'habits'), (snap) => {
       setHabits(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
-    // users/{uid}/habits/checkins
-    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'habits', 'checkins'), (snap) => {
+    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'habit_checkins'), (snap) => {
       setCheckins(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
@@ -41,7 +39,7 @@ export function useHabits() {
 
   const addCheckin = async (habitId: any, value: number) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'habits', 'checkins'), {
+    await addDoc(collection(db, 'users', user.uid, 'habit_checkins'), {
       habitId,
       date: todayStr,
       value,
@@ -54,10 +52,10 @@ export function useHabits() {
     const dailyCheckins = checkins.filter(c => c.habitId === habitId && c.date === todayStr);
     if (dailyCheckins.length > 0) {
       for (const checkin of dailyCheckins) {
-        // Fix: Use String() conversion instead of 'as string' cast to avoid TS2352 if id is number
-        const checkinId = checkin.id ? String(checkin.id) : '';
+        // Fix: Use String() conversion instead of 'as string' cast to avoid TS2352
+        const checkinId = checkin.id !== undefined ? String(checkin.id) : '';
         if (checkinId) {
-            await deleteDoc(doc(db, 'users', user.uid, 'habits', 'checkins', checkinId));
+            await deleteDoc(doc(db, 'users', user.uid, 'habit_checkins', checkinId));
         }
       }
     } else {
@@ -67,17 +65,17 @@ export function useHabits() {
 
   const createHabit = async (habit: Omit<Habit, 'id' | 'createdAt'>) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'habits', 'items'), { ...habit, createdAt: Date.now() });
+    await addDoc(collection(db, 'users', user.uid, 'habits'), { ...habit, createdAt: Date.now() });
   };
 
   const deleteHabit = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'habits', 'items', id));
+    await deleteDoc(doc(db, 'users', user.uid, 'habits', id));
   };
 
   const updateHabit = async (id: any, data: Partial<Habit>) => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'habits', 'items', id), data);
+    await updateDoc(doc(db, 'users', user.uid, 'habits', id), data);
   };
 
   return {
