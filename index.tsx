@@ -27,10 +27,23 @@ root.render(
 );
 
 // Register Service Worker for PWA
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
-      .then(reg => console.log("SW registered", reg))
-      .catch(err => console.log("SW failed", err));
-  });
+const registerServiceWorker = async () => {
+  if ("serviceWorker" in navigator) {
+    try {
+      // Explicitly construct URL using current origin to verify scope matches
+      const swUrl = new URL('/service-worker.js', window.location.origin).href;
+      const registration = await navigator.serviceWorker.register(swUrl);
+      console.log("Service Worker registered:", registration.scope);
+    } catch (error) {
+      // Log error but do not crash application flow
+      console.warn("Service Worker registration failed:", error);
+    }
+  }
+};
+
+// Execute registration logic based on document state
+if (document.readyState === 'complete') {
+  registerServiceWorker();
+} else {
+  window.addEventListener("load", registerServiceWorker);
 }
