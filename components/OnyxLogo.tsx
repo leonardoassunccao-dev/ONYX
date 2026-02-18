@@ -7,21 +7,16 @@ interface OnyxLogoProps {
 }
 
 const OnyxLogo: React.FC<OnyxLogoProps> = ({ size = 32, animated = false, className = '' }) => {
+  // Animation for the new minimalist design
+  // The ring spins slowly or scales in, the cut acts as a scanner
   const animationStyles = animated ? `
-    @keyframes emblemReveal {
-      0% { opacity: 0; transform: scale(0.8) translateY(5px); }
-      100% { opacity: 1; transform: scale(1) translateY(0); }
+    @keyframes ringReveal {
+      0% { opacity: 0; transform: scale(0.8) rotate(-90deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
     }
-    .onyx-emblem-path {
-      opacity: 0;
+    .onyx-ring {
       transform-origin: center;
-      animation: emblemReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    }
-    .onyx-emblem-core {
-      opacity: 0;
-      transform-origin: center;
-      animation: emblemReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-      animation-delay: 0.1s;
+      animation: ringReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
   ` : '';
 
@@ -35,39 +30,29 @@ const OnyxLogo: React.FC<OnyxLogoProps> = ({ size = 32, animated = false, classN
         style={{ width: '100%', height: '100%' }}
       >
         <defs>
-          <linearGradient id="onyxGoldGradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="var(--accent-color)" />
-            <stop offset="100%" stopColor="var(--accent-color)" stopOpacity="0.8" />
-          </linearGradient>
+          {/* Mask for the Ultra-thin vertical cut */}
+          <mask id="vertical-cut">
+            <rect x="0" y="0" width="100" height="100" fill="white" />
+            {/* Cut width ~3% of viewbox for ultra-thin look, extending beyond circle */}
+            <rect x="48.5" y="-10" width="3" height="120" fill="black" />
+          </mask>
         </defs>
 
         {/* 
-          Elite Geometric Emblem 
-          Structure: Faceted Diamond/Shield Hybrid
-          Style: Abstract, Tactical, Symmetrical
+          Perfect Geometric Circular Ring 
+          Color: Metallic Gold (#C9A227)
+          Stroke: Uniform thickness
         */}
-        <g>
-          {/* Outer Facet (Main Body) */}
-          <path
-            className={animated ? 'onyx-emblem-path' : ''}
-            d="M50 10 L88 32 L70 60 L50 92 L30 60 L12 32 Z"
-            fill="url(#onyxGoldGradient)"
-          />
-          
-          {/* Inner Negative Space (The 'Core') - Creates the abstract detail */}
-          <path
-            className={animated ? 'onyx-emblem-core' : ''}
-            d="M50 28 L62 48 L50 72 L38 48 Z"
-            fill="#0B0B0D"
-          />
-          
-          {/* Subtle Horizontal Cut (Tactical Detail) */}
-          <rect 
-             x="49" y="10" width="2" height="18" fill="#0B0B0D" 
-             className={animated ? 'onyx-emblem-core' : ''}
-             opacity="0.4"
-          />
-        </g>
+        <circle 
+          className={animated ? 'onyx-ring' : ''}
+          cx="50" 
+          cy="50" 
+          r="36" 
+          stroke="#C9A227" 
+          strokeWidth="6" 
+          fill="none" 
+          mask="url(#vertical-cut)"
+        />
       </svg>
     </div>
   );
