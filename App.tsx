@@ -19,6 +19,7 @@ import OnyxLogo from './components/OnyxLogo';
 import SplashScreen from './components/SplashScreen';
 import FocusUltra from './components/FocusUltra';
 import FullscreenExitButton from './components/FullscreenExitButton';
+import UltraFocusExit from './components/UltraFocusExit';
 
 // Pages
 import TodayPage from './pages/Today';
@@ -201,9 +202,17 @@ const App: React.FC = () => {
     } catch (e) { console.warn(e); }
   };
 
-  const exitFocusUltra = () => {
+  const exitFocusUltra = async () => {
     setIsFocusUltra(false);
     localStorage.setItem('onyxFocusUltraEnabled', 'false');
+    // Also try to exit fullscreen if active
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    } catch (e) {
+      console.warn(e);
+    }
   };
 
   // Main Render Logic
@@ -375,7 +384,8 @@ const App: React.FC = () => {
 
   return (
     <>
-      <FullscreenExitButton meetingMode={meetingMode} onExit={exitMeetingMode} />
+      {!isFocusUltra && <FullscreenExitButton meetingMode={meetingMode} onExit={exitMeetingMode} />}
+      {isFocusUltra && <UltraFocusExit onExit={exitFocusUltra} />}
       {renderAppContent()}
     </>
   );

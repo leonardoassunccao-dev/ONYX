@@ -68,9 +68,6 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
   };
 
   const exitFocusMode = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(err => console.log(err));
-    }
     onExit();
   };
 
@@ -91,22 +88,6 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
       className="fixed inset-0 z-[99999] bg-black text-white flex flex-col items-center justify-center cursor-default select-none"
       onMouseMove={handleMouseMove}
     >
-      {/* Mobile/Global Exit Button - Always Visible & Safe Area Respected */}
-      <button
-        onClick={exitFocusMode}
-        style={{ 
-          position: 'fixed',
-          top: 'calc(env(safe-area-inset-top, 0px) + 12px)', 
-          right: '12px',
-          zIndex: 2147483647,
-          pointerEvents: 'auto'
-        }}
-        className="bg-[#000000] border border-[#C9A227] text-[#C9A227] px-4 py-2 rounded-sm active:scale-95 transition-all shadow-none hover:bg-[#C9A227] hover:text-black"
-        aria-label="Sair do Modo Foco"
-      >
-        <span className="text-[10px] font-black uppercase tracking-widest">SAIR</span>
-      </button>
-
       {/* HUD (Top Hover) */}
       <div 
         className={`fixed top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex justify-center transition-opacity duration-500 ${showHud ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
