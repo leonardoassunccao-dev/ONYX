@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, ensureInitialData } from './db';
 import { Section, Settings, Profile } from './types';
-import { toError, logDiagnostic } from './utils/error';
+import { logDiagnostic } from './utils/error';
 import { applyTheme } from './utils/theme';
 import { 
   LayoutDashboard, 
@@ -38,7 +38,8 @@ const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Focus Ultra State
+  // Global "Meeting Mode" / Visual Fullscreen State
+  const [meetingMode, setMeetingMode] = useState(false);
   const [isFocusUltra, setIsFocusUltra] = useState(false);
 
   // Helper to merge DB profile with LocalStorage name preference
@@ -71,6 +72,11 @@ const App: React.FC = () => {
         
         setProfile(resolveProfile(p[0]));
         setSettings(s[0]);
+        
+        // Sync local visual state with DB setting on load
+        if (s[0].meetingMode) {
+          setMeetingMode(true);
+        }
 
         // Check for Focus Ultra Persistence
         const focusPersist = localStorage.getItem('onyxFocusUltraEnabled') === 'true';
@@ -91,6 +97,20 @@ const App: React.FC = () => {
       }
     };
     init();
+
+    // Listen to system fullscreen changes to keep state in sync (e.g. user presses ESC)
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        // If system exits fullscreen, we might want to exit Meeting Mode 
+        // OR just stay in CSS mode. 
+        // For now, let's allow CSS mode to persist unless explicitly exited via our UI.
+        // But if the user pressed ESC, they likely want to leave.
+        // However, standard browser behavior for ESC is exit fullscreen. 
+        // We will strictly control meetingMode via the toggle button logic.
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   const handleSplashFinish = () => {
@@ -104,25 +124,81 @@ const App: React.FC = () => {
       const p = await db.profile.toArray();
       const s = await db.settings.toArray();
       if (p.length > 0) setProfile(resolveProfile(p[0]));
-      if (s.length > 0) setSettings(s[0]);
+      if (s.length > 0) {
+        setSettings(s[0]);
+        // Update local state if DB changed externally (e.g. from System page)
+        setMeetingMode(s[0].meetingMode);
+      }
     } catch (err) {
       logDiagnostic("Refresh Data", err);
+    }
+  };
+
+  // --- FULLSCREEN / MEETING MODE LOGIC ---
+
+  const enterMeetingMode = async () => {
+    // 1. Set Local State (Visual Fallback)
+    setMeetingMode(true);
+    
+    // 2. Persist to DB
+    if (settings?.id) {
+       await db.settings.update(settings.id, { meetingMode: true });
+       // Update local settings object immediately to reflect change in UI
+       setSettings({ ...settings, meetingMode: true });
+    }
+
+    // 3. Attempt API Fullscreen
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if ((el as any).webkitRequestFullscreen) {
+        await (el as any).webkitRequestFullscreen();
+      }
+    } catch (e) {
+      // Ignore errors (e.g. iOS Safari doesn't support API, will rely on CSS fallback)
+      console.log("Fullscreen API not supported or blocked, using CSS fallback.");
+    }
+  };
+
+  const exitMeetingMode = async () => {
+    // 1. Set Local State
+    setMeetingMode(false);
+    
+    // 2. Persist to DB
+    if (settings?.id) {
+       await db.settings.update(settings.id, { meetingMode: false });
+       setSettings({ ...settings, meetingMode: false });
+    }
+
+    // 3. Attempt API Exit
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        await (document as any).webkitExitFullscreen();
+      }
+    } catch (e) {
+      console.log("Fullscreen Exit error", e);
+    }
+  };
+
+  const toggleMeetingMode = () => {
+    if (meetingMode) {
+      exitMeetingMode();
+    } else {
+      enterMeetingMode();
     }
   };
 
   const enterFocusUltra = async () => {
     setIsFocusUltra(true);
     localStorage.setItem('onyxFocusUltraEnabled', 'true');
-    
-    // Attempt fullscreen immediately on user action
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
-        localStorage.setItem('onyxFocusUltraFullscreenPreferred', 'true');
       }
-    } catch (e) {
-      console.warn("Fullscreen blocked by browser logic", e);
-    }
+    } catch (e) { console.warn(e); }
   };
 
   const exitFocusUltra = () => {
@@ -130,7 +206,7 @@ const App: React.FC = () => {
     localStorage.setItem('onyxFocusUltraEnabled', 'false');
   };
 
-  // Main Render Logic Wrapper to support Global Overlays
+  // Main Render Logic
   const renderAppContent = () => {
     if (error) {
       return (
@@ -149,24 +225,22 @@ const App: React.FC = () => {
       );
     }
 
-    // Focus Ultra Render Interception
     if (isFocusUltra) {
       return <FocusUltra onExit={exitFocusUltra} />;
     }
 
-    // Splash Screen Render Interception
     if (showSplash) {
       return <SplashScreen onFinish={handleSplashFinish} />;
     }
 
     if (!initialized || !settings || !profile) {
-      // Fallback minimal loader if needed between Splash and App, usually instant.
       return <div className="h-screen bg-[#000000]" />;
     }
 
+    // Routing
     const renderContent = () => {
       switch (activeSection) {
-        case 'today': return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} />;
+        case 'today': return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;
         case 'finance': return <FinancePage settings={settings} />;
         case 'pacer': return <PacerPage settings={settings} />;
         case 'reading': return <ReadingPage settings={settings} />;
@@ -174,7 +248,7 @@ const App: React.FC = () => {
         case 'work': return <WorkPage settings={settings} />;
         case 'routine': return <RoutinePage settings={settings} />;
         case 'system': return <SystemPage profile={profile} settings={settings} onRefresh={refreshAppData} onNavigate={setActiveSection} />;
-        default: return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} />;
+        default: return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;
       }
     };
 
@@ -189,10 +263,6 @@ const App: React.FC = () => {
       { id: 'system', label: 'SISTEMA', icon: SettingsIcon },
     ];
 
-    // In Meeting Mode, we remove padding and text sizing adjustments to let the Page handle the full viewport
-    const appClasses = `min-h-screen flex flex-col md:flex-row bg-[#000000] transition-all duration-300 ${settings.meetingMode ? 'overflow-hidden h-screen' : 'text-base'}`;
-
-    // Mobile Bottom Nav Items (Apple Minimal)
     const mobileNavItems = [
       { id: 'today', label: 'Hoje', icon: LayoutDashboard },
       { id: 'finance', label: 'Finanças', icon: DollarSign },
@@ -200,10 +270,16 @@ const App: React.FC = () => {
       { id: 'system', label: 'Sistema', icon: SettingsIcon },
     ];
 
+    // Determine Classes based on meetingMode state
+    // If meetingMode is active, enforce the fullscreen styles
+    const containerClasses = meetingMode 
+      ? "fixed inset-0 z-[9999] bg-[#000000] overflow-y-auto h-screen w-screen" 
+      : "min-h-screen flex flex-col md:flex-row bg-[#000000] transition-all duration-300 text-base";
+
     return (
-      <div className={appClasses}>
+      <div className={containerClasses}>
         {/* Desktop Sidebar - Hidden in Meeting Mode */}
-        {!settings.meetingMode && (
+        {!meetingMode && (
           <aside className="hidden md:flex flex-col w-64 bg-[#050505] border-r border-[#1a1a1a] p-4 sticky top-0 h-screen z-20">
             <div className="mb-14 px-4 flex items-center gap-5">
               <OnyxLogo size={46} />
@@ -236,10 +312,11 @@ const App: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <main className={`flex-1 ${settings.meetingMode ? 'h-screen overflow-hidden' : 'overflow-y-auto pb-24 md:pb-0'}`}>
-          <div className={`${settings.meetingMode ? 'h-full w-full' : 'max-w-6xl mx-auto p-4 md:p-8 flex flex-col min-h-full'}`}>
+        <main className={`flex-1 ${meetingMode ? 'h-full w-full' : 'overflow-y-auto pb-24 md:pb-0'}`}>
+          <div className={`${meetingMode ? 'h-full w-full' : 'max-w-6xl mx-auto p-4 md:p-8 flex flex-col min-h-full'}`}>
+            
             {/* Mobile Header - Hidden in Meeting Mode */}
-            {!settings.meetingMode && (
+            {!meetingMode && (
               <div className="md:hidden flex items-center justify-between mb-8 pb-4 border-b border-[#1a1a1a]">
                  <div className="flex items-center gap-5">
                     <OnyxLogo size={38} />
@@ -257,8 +334,8 @@ const App: React.FC = () => {
               {renderContent()}
             </div>
 
-            {/* GLOBAL FOOTER */}
-            {!settings.meetingMode && (
+            {/* GLOBAL FOOTER - Hidden in Meeting Mode */}
+            {!meetingMode && (
               <footer className="mt-16 py-8 text-center border-t border-[#1a1a1a]">
                 <p className="text-[#f5f5f5] text-[10px] font-black tracking-widest uppercase mb-2">ONYX © 2026</p>
                 <p className="text-zinc-600 text-[9px] font-bold uppercase tracking-widest">Projeto pessoal de Leonardo Assunção</p>
@@ -267,14 +344,12 @@ const App: React.FC = () => {
           </div>
         </main>
 
-        {/* Mobile Bottom Navigation - Apple Minimal Style */}
-        {!settings.meetingMode && (
+        {/* Mobile Bottom Navigation - Hidden in Meeting Mode */}
+        {!meetingMode && (
           <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#000000] border-t border-[#1a1a1a] flex justify-around items-center h-16 z-50 pb-safe">
             {mobileNavItems.map((item) => {
-              // Determine active state logic (System active if section is system OR one of the sub-modules)
               const isSystemActive = item.id === 'system' && ['system', 'pacer', 'reading', 'study', 'work'].includes(activeSection);
               const isActive = activeSection === item.id || isSystemActive;
-              
               return (
                 <button
                   key={item.id}
@@ -300,7 +375,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <FullscreenExitButton />
+      <FullscreenExitButton meetingMode={meetingMode} onExit={exitMeetingMode} />
       {renderAppContent()}
     </>
   );

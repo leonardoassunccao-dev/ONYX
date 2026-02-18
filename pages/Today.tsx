@@ -33,9 +33,10 @@ interface TodayProps {
   onRefresh: () => void;
   onEnterFocus?: () => void;
   onNavigate?: (section: Section) => void;
+  onToggleMeetingMode?: () => void; // Prop for synchronous toggle
 }
 
-const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnterFocus, onNavigate }) => {
+const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnterFocus, onNavigate, onToggleMeetingMode }) => {
   // Hooks
   const { currentBook, getBookStats } = useBooks();
   const { getTodayHabits, getProgress: getHabitProgress, toggleBooleanHabit } = useHabits();
@@ -58,7 +59,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
   // Financial State
   const [finMetrics, setFinMetrics] = useState({ salaryUsed: 0, patrimonyPercent: 0 });
 
-  // Animation State (Initializing to 0)
+  // Animation State
   const [anim, setAnim] = useState({
     salary: 0,
     physical: 0,
@@ -79,11 +80,11 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
 
     fetchData();
 
-    // Check Fullscreen preference on load
-    const prefFS = localStorage.getItem('onyxMeetingFullscreenPreferred') === 'true';
-    if (prefFS && settings.meetingMode) {
-       // Browser blocks auto-fullscreen without interaction, logic handled in triggers
-    }
+    // Check Fullscreen state
+    const checkFS = () => setIsFullscreen(!!document.fullscreenElement);
+    checkFS();
+    document.addEventListener('fullscreenchange', checkFS);
+    return () => document.removeEventListener('fullscreenchange', checkFS);
   }, []);
 
   // Click Outside Handler for Mobile Menu
@@ -182,7 +183,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!settings.meetingMode) return;
       if (e.key.toLowerCase() === 'f') toggleFullscreen();
-      if (e.key.toLowerCase() === 'r') toggleMeetingMode();
+      if (e.key.toLowerCase() === 'r') handleToggleMeetingMode();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -190,7 +191,6 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
 
   const fetchData = async () => {
     setLoading(true);
-    
     try {
       const salaryState = await db.app_state.get('monthly_salary');
       const salary = salaryState?.value || 0;
@@ -218,37 +218,31 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
     } catch (e) {
       console.error("Fin Calc Error", e);
     }
-    
     setLoading(false);
   };
 
-  const toggleMeetingMode = async () => {
-    const newMode = !settings.meetingMode;
-    await db.settings.update(settings.id!, { meetingMode: newMode });
+  const handleToggleMeetingMode = () => {
     setShowMobileMenu(false);
-    
-    if (!newMode && document.fullscreenElement) {
-       await document.exitFullscreen().catch(err => console.log(err));
-       setIsFullscreen(false);
+    if (onToggleMeetingMode) {
+      onToggleMeetingMode();
+    } else {
+      // Fallback if prop not provided (older behavior, async update without FS trigger)
+      const newMode = !settings.meetingMode;
+      db.settings.update(settings.id!, { meetingMode: newMode }).then(onRefresh);
     }
-    
-    onRefresh();
   };
 
   const toggleFullscreen = async () => {
+    // Legacy internal handler, now handled by App.tsx global logic mostly, 
+    // but kept here for "F" key shortcut in existing view.
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
-        localStorage.setItem('onyxMeetingFullscreenPreferred', 'true');
-        setIsFullscreen(true);
       } else {
         await document.exitFullscreen();
-        localStorage.setItem('onyxMeetingFullscreenPreferred', 'false');
-        setIsFullscreen(false);
       }
     } catch (err) {
       console.error("Fullscreen blocked:", err);
-      // Optional: Toast message here
     }
     setShowMobileMenu(false);
   };
@@ -263,7 +257,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
     ? Math.min((bookStats.pagesToday / currentBook.dailyPagesGoal) * 100, 100) 
     : 0;
 
-  // Evolution Index Logic
+  // Evolution Index
   const evolutionIndex = (() => {
     const scoreFinance = Math.max(0, 100 - finMetrics.salaryUsed);
     const scorePhysical = habitPercentage;
@@ -274,7 +268,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
     return Math.round(total / 4);
   })();
 
-  // --- ANIMATION EFFECT (Status Operational) ---
+  // --- ANIMATION EFFECT ---
   useEffect(() => {
     if (loading || bootStage < 3) return; 
 
@@ -327,9 +321,9 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
   /* ------------------------------------------------ */
   if (settings.meetingMode) {
     return (
-      <div className="h-screen w-full bg-[#000000] text-white flex flex-col relative overflow-hidden">
+      <div className="h-full w-full bg-[#000000] text-white flex flex-col relative">
         {/* HUD HEADER */}
-        <header className="flex items-center justify-between px-8 py-4 border-b border-[#1a1a1a] bg-[#050505]">
+        <header className="flex items-center justify-between px-8 py-4 border-b border-[#1a1a1a] bg-[#050505] shrink-0">
           <div className="flex items-center gap-4">
              <OnyxLogo size={32} />
              <div className="h-4 w-[1px] bg-zinc-800"></div>
@@ -351,14 +345,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
                   Foco Ultra
                 </button>
                 <button 
-                  onClick={toggleFullscreen} 
-                  className="flex items-center gap-2 px-4 py-2 bg-[#0B0B0B] hover:bg-zinc-800 border border-[#1a1a1a] text-zinc-400 hover:text-white rounded transition-all text-[10px] font-black uppercase tracking-widest"
-                >
-                  {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                  {isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}
-                </button>
-                <button 
-                  onClick={toggleMeetingMode} 
+                  onClick={handleToggleMeetingMode} 
                   className="p-2 text-zinc-600 hover:text-red-500 transition-colors"
                   title="Sair do Modo Reunião (R)"
                 >
@@ -425,7 +412,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
          {/* MODE TOGGLES & MOBILE MENU */}
          <div className="absolute top-0 right-0 z-50 flex flex-col items-end" ref={mobileMenuRef}>
            
-           {/* DESKTOP BUTTONS (Visible on large screens) */}
+           {/* DESKTOP BUTTONS */}
            <div className="hidden lg:flex items-center gap-3 mt-2 mr-4">
              <button 
                onClick={onEnterFocus}
@@ -435,7 +422,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
                <Eye size={12} />
              </button>
              <button 
-               onClick={toggleMeetingMode}
+               onClick={handleToggleMeetingMode}
                className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-[var(--accent-color)] border border-[#1a1a1a] hover:border-[var(--accent-color)] px-3 py-1.5 rounded transition-all"
              >
                <Monitor size={12} />
@@ -443,7 +430,7 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
              </button>
            </div>
 
-           {/* MOBILE TRIGGER ICON (Visible on small screens) */}
+           {/* MOBILE TRIGGER ICON */}
            <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="lg:hidden text-zinc-600 hover:text-[var(--accent-color)] p-4 transition-colors active:scale-95"
@@ -459,19 +446,11 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onRefresh, onEnter
                   </div>
                   
                   <button 
-                    onClick={toggleMeetingMode}
+                    onClick={handleToggleMeetingMode}
                     className="w-full text-left px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 flex items-center gap-3 transition-all"
                   >
                     <Monitor size={14} className="text-[var(--accent-color)]" />
                     {settings.meetingMode ? 'Sair Modo Reunião' : 'Ativar Modo Reunião'}
-                  </button>
-
-                  <button 
-                    onClick={toggleFullscreen}
-                    className="w-full text-left px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 flex items-center gap-3 transition-all"
-                  >
-                    {isFullscreen ? <Minimize size={14} className="text-[var(--accent-color)]" /> : <Maximize size={14} className="text-[var(--accent-color)]" />}
-                    {isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}
                   </button>
 
                   <button 

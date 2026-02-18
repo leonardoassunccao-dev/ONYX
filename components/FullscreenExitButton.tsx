@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Minimize2 } from 'lucide-react';
 
-const FullscreenExitButton: React.FC = () => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+interface FullscreenExitButtonProps {
+  meetingMode: boolean;
+  onExit: () => void;
+}
+
+const FullscreenExitButton: React.FC<FullscreenExitButtonProps> = ({ meetingMode, onExit }) => {
+  const [hasFullscreenElement, setHasFullscreenElement] = useState(false);
 
   useEffect(() => {
     const handleChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setHasFullscreenElement(!!document.fullscreenElement);
     };
 
-    // Initial check
-    handleChange();
-
     document.addEventListener('fullscreenchange', handleChange);
-    // Vendor prefixes support just in case
     document.addEventListener('webkitfullscreenchange', handleChange);
     document.addEventListener('mozfullscreenchange', handleChange);
     document.addEventListener('msfullscreenchange', handleChange);
@@ -27,27 +28,29 @@ const FullscreenExitButton: React.FC = () => {
   }, []);
 
   const handleExit = async () => {
+    // 1. Try API Exit
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       } else if ((document as any).webkitExitFullscreen) {
         await (document as any).webkitExitFullscreen();
-      } else if ((document as any).mozCancelFullScreen) {
-        await (document as any).mozCancelFullScreen();
-      } else if ((document as any).msExitFullscreen) {
-        await (document as any).msExitFullscreen();
       }
     } catch (err) {
-      console.warn("Fullscreen exit failed:", err);
+      console.warn("Fullscreen exit API failed or not active:", err);
     }
+    // 2. Trigger App State Exit (covers CSS fallback)
+    onExit();
   };
 
-  if (!isFullscreen) return null;
+  // Show if API fullscreen is active OR if we are in CSS Meeting Mode
+  const isVisible = hasFullscreenElement || meetingMode;
+
+  if (!isVisible) return null;
 
   return (
     <button
       onClick={handleExit}
-      className="fixed top-4 right-4 z-[999999] flex items-center gap-2 bg-[#000000] border border-[#C9A227] text-[#C9A227] px-3 py-2 rounded-sm active:scale-95 transition-all hover:bg-[#C9A227] hover:text-black"
+      className="fixed top-4 right-4 z-[999999] flex items-center gap-2 bg-[#000000] border border-[#C9A227] text-[#C9A227] px-4 py-2 rounded-sm active:scale-95 transition-all hover:bg-[#C9A227] hover:text-black"
       style={{ boxShadow: 'none' }}
       aria-label="Sair da tela cheia"
     >
