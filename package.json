@@ -11,10 +11,10 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "lucide-react": "^0.460.0",
+    "lucide-react": "^0.450.0",
     "dexie": "^4.0.8",
     "dexie-react-hooks": "^1.1.7",
-    "@google/genai": "^0.21.0"
+    "@google/genai": "^0.1.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
