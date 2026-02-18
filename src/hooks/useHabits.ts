@@ -54,7 +54,11 @@ export function useHabits() {
     const dailyCheckins = checkins.filter(c => c.habitId === habitId && c.date === todayStr);
     if (dailyCheckins.length > 0) {
       for (const checkin of dailyCheckins) {
-        await deleteDoc(doc(db, 'users', user.uid, 'habits', 'checkins', checkin.id as string));
+        // Fix: Use String() conversion instead of 'as string' cast to avoid TS2352 if id is number
+        const checkinId = checkin.id ? String(checkin.id) : '';
+        if (checkinId) {
+            await deleteDoc(doc(db, 'users', user.uid, 'habits', 'checkins', checkinId));
+        }
       }
     } else {
       await addCheckin(habitId, 1);
