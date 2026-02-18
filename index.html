@@ -2,30 +2,42 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="background-color" content="#000000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="Strategic Bruce Wayne Tech Ops Personal Suite" />
+    
     <title>Onyx</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles/onyxBoot.css">
+    <!-- Manifest is injected automatically by vite-plugin-pwa -->
+    
     <style>
       :root {
         --onyx-black: #000000;
         --onyx-panel: #050505;
         --onyx-dim: #1a1a1a;
-        
-        /* Theme Variables (Default: Gold) */
         --accent-color: #D4AF37;
         --accent-rgb: 212, 175, 55;
       }
 
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--onyx-black);
+      /* CRITICAL: Prevent white flash on load */
+      html, body {
+        background-color: #000000 !important;
         color: #ffffff;
         margin: 0;
+        padding: 0;
         overflow-x: hidden;
+        height: 100%;
+        width: 100%;
+        font-family: 'Inter', sans-serif;
+        -webkit-tap-highlight-color: transparent;
       }
       
       /* Smooth Theme Transitions */
@@ -103,14 +115,15 @@
     "lucide-react": "https://esm.sh/lucide-react@^0.574.0",
     "dexie-react-hooks": "https://esm.sh/dexie-react-hooks@^4.2.0",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
+    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0"
   }
 }
 </script>
 </head>
   <body>
     <div id="root">
-      <div style="height: 100vh; width: 100vw; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; font-family: monospace; text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px;">
+      <div style="height: 100vh; width: 100vw; background: #000000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; font-family: monospace; text-transform: uppercase; letter-spacing: 0.2em; font-size: 10px;">
         <div style="width: 40px; height: 1px; background: #333; margin-bottom: 20px;"></div>
         INITIALIZING CORE...
       </div>
