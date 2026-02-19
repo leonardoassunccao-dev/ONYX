@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db as firestore } from '../lib/firebase';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut as firebaseSignOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, writeBatch, collection, serverTimestamp } from 'firebase/firestore';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import { doc, getDoc, setDoc, writeBatch, collection } from 'firebase/firestore';
 import { db as dexieDb } from '../db';
 
-// Enhanced AuthContextType with setGlobalError
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -21,7 +20,6 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  // Implementation of global error state
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   const migrateLocalData = async (uid: string) => {
@@ -82,44 +80,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (e: string, p: string) => signInWithEmailAndPassword(auth, e, p).then(() => {});
   
-  const register = async (email: string, password: string, name: string) => {
-    // CRITICAL: Validate name before creating user
-    if (!name || !name.trim()) {
-      throw new Error("O campo 'Nome' é obrigatório para identificação do operador.");
-    }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
-
-      // 1. Atualiza Perfil do Firebase Auth
-      await updateProfile(userCredential.user, { displayName: name.trim() });
-
-      // 2. Salva na RAIZ do documento do usuário
-      await setDoc(doc(firestore, 'users', uid), {
-        name: name.trim(),
-        email: email,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp()
-      }, { merge: true });
-
-      // 3. Inicializa configurações padrão
-      await setDoc(doc(firestore, 'users', uid, 'system', 'settings'), {
-        meetingMode: false,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-    } catch (err: any) {
-      console.error("Register Error:", err);
-      throw err;
-    }
+  const register = async (e: string, p: string, n: string) => {
+    const cred = await createUserWithEmailAndPassword(auth, e, p);
+    // Criação segura do documento de perfil
+    await setDoc(doc(firestore, 'users', cred.user.uid, 'profile', 'profile'), {
+      name: n || 'Agente'
+    }, { merge: true });
   };
 
   const logout = () => firebaseSignOut(auth);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, setGlobalError }}>
-      {/* Global Error Notification Overlay */}
       {globalError && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] bg-red-900 text-white px-6 py-3 rounded border border-red-500 font-black text-[10px] uppercase tracking-widest shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
           <span>{globalError}</span>

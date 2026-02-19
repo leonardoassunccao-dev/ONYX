@@ -7,24 +7,25 @@ import { updateProfile } from 'firebase/auth';
 import { applyTheme } from '../utils/theme';
 import Card from '../components/Card';
 import { 
-  User, Monitor, LogOut, Edit2, Check, X, 
+  User, Monitor, LogOut, Edit2, Check, X, Terminal, 
   Palette, Shield
 } from 'lucide-react';
 
 interface SystemProps {
   profile: Profile;
   settings: Settings;
+  onRefresh: () => void;
+  onNavigate?: (section: any) => void;
 }
 
-const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
+const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh }) => {
   const { user, logout } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   
-  // CORREÇÃO: Prioridade do nome: Profile (DB) > Auth > Fallback
+  // Garante que o nome seja exibido corretamente (Profile > Auth > Fallback)
   const currentDisplayName = profile.name || user?.displayName || "AGENTE";
   const [tempName, setTempName] = useState(currentDisplayName);
 
-  // Sincroniza o input local se o perfil externo mudar
   useEffect(() => {
     if (!isEditingName) {
       setTempName(currentDisplayName);
@@ -36,20 +37,18 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
     const trimmed = tempName.trim();
     if (trimmed) {
       try {
-        // CORREÇÃO: Salva na raiz users/{uid} com merge true
-        await setDoc(doc(db, 'users', user.uid), { 
-          name: trimmed,
-          updatedAt: serverTimestamp() 
+        // CORREÇÃO CRÍTICA: Usar setDoc com merge em vez de updateDoc
+        await setDoc(doc(db, 'users', user.uid, 'profile', 'profile'), { 
+          name: trimmed 
         }, { merge: true });
-
-        // Atualiza o Firebase Auth para refletir mudança na sessão
-        await updateProfile(user, { displayName: trimmed });
         
-        setIsEditingName(false);
-      } catch (err) {
-        console.error("Erro ao salvar identificação:", err);
+        // Atualiza também o profile do Auth para consistência
+        await updateProfile(user, { displayName: trimmed });
+      } catch (error) {
+        console.error("Erro ao salvar nome:", error);
       }
     }
+    setIsEditingName(false);
   };
 
   const cancelEdit = () => {
@@ -61,11 +60,10 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
     if (!user) return;
     try {
       await setDoc(doc(db, 'users', user.uid, 'system', 'settings'), { 
-        meetingMode: !settings.meetingMode,
-        updatedAt: serverTimestamp() 
+        meetingMode: !settings.meetingMode 
       }, { merge: true });
-    } catch (err) {
-      console.error("Erro ao alternar modo:", err);
+    } catch (error) {
+      console.error("Erro ao alternar modo reunião:", error);
     }
   };
 
@@ -78,7 +76,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
       <header className="border-b border-[#1a1a1a] pb-6">
         <h2 className="text-3xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase">SISTEMA</h2>
         <div className="flex items-center gap-2 mt-2">
-           <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] animate-pulse"></div>
+           <Terminal size={12} className="text-[var(--accent-color)]" />
            <p className="text-zinc-600 text-[10px] uppercase tracking-[0.3em] font-black">Onyx Core Environment (Cloud Uplink)</p>
         </div>
       </header>

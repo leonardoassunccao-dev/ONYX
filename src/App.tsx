@@ -123,10 +123,9 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
-    // CORREÇÃO: Escutar raiz do usuário (users/{uid}) em vez de profile/profile
-    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid), (doc) => {
+    // Escuta o perfil no caminho users/{uid}/profile/profile
+    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'profile'), (doc) => {
       const dbName = doc.exists() ? doc.data()?.name : null;
-      // CORREÇÃO: Prioridade para o nome do banco de dados
       setProfile({ 
         name: dbName || user.displayName || 'AGENTE', 
         id: user.uid 
@@ -178,7 +177,7 @@ const MainApp: React.FC = () => {
       case 'study': return <StudyPage settings={settings} />;
       case 'work': return <WorkPage settings={settings} />;
       case 'routine': return <RoutinePage settings={settings} />;
-      case 'system': return <SystemPage profile={profile} settings={settings} />;
+      case 'system': return <SystemPage profile={profile} settings={settings} onRefresh={refreshAppData} onNavigate={setActiveSection} />;
       default: return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;
     }
   };

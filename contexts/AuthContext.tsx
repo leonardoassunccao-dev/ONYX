@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (e: string, p: string) => Promise<void>;
-  register: (e: string, p: string) => Promise<void>;
+  register: (e: string, p: string, n: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -77,7 +77,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (e: string, p: string) => signInWithEmailAndPassword(auth, e, p).then(() => {});
-  const register = (e: string, p: string) => createUserWithEmailAndPassword(auth, e, p).then(() => {});
+  
+  const register = async (email: string, password: string, name: string) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
+    
+    // Create profile doc
+    await setDoc(doc(firestore, 'users', uid, 'profile', 'profile'), {
+      name: name || 'Agente'
+    }, { merge: true });
+    
+    // Create settings doc default
+    await setDoc(doc(firestore, 'users', uid, 'system', 'settings'), {
+      meetingMode: false,
+      greetingsEnabled: true,
+      accent: '#D4AF37'
+    }, { merge: true });
+  };
+
   const logout = () => firebaseSignOut(auth);
 
   return (

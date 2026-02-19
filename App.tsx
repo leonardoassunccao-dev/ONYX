@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { db as firestore } from './lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Section, Settings, Profile } from './types';
 import { applyTheme } from './utils/theme';
 import { 
@@ -19,7 +19,6 @@ import OnyxLogo from './components/OnyxLogo';
 import SplashScreen from './components/SplashScreen';
 import FocusUltra from './components/FocusUltra';
 import FullscreenExitButton from './components/FullscreenExitButton';
-import UltraFocusExit from './components/UltraFocusExit';
 
 import TodayPage from './pages/Today';
 import FinancePage from './pages/Finance';
@@ -34,6 +33,7 @@ const LoginScreen: React.FC = () => {
   const { login, register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,12 +44,12 @@ const LoginScreen: React.FC = () => {
     setError('');
     try {
       if (isRegistering) {
-        await register(email, password);
+        await register(email, password, name);
       } else {
         await login(email, password);
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Erro na autenticação");
     } finally {
       setLoading(false);
     }
@@ -62,6 +62,16 @@ const LoginScreen: React.FC = () => {
       <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-12">Acesso Restrito // Identificação Requerida</p>
       
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        {isRegistering && (
+          <input 
+            type="text" 
+            placeholder="NOME DO AGENTE" 
+            className="w-full bg-[#0B0B0D] border border-zinc-800 p-4 text-xs font-bold text-white outline-none focus:border-[#D4AF37] uppercase tracking-wider rounded"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+        )}
         <input 
           type="email" 
           placeholder="IDENTIFICAÇÃO (EMAIL)" 
@@ -104,28 +114,28 @@ const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('today');
   
-  const [profile, setProfile] = useState<Profile>({ name: 'Agente', id: 0 });
+  const [profile, setProfile] = useState<Profile>({ name: 'AGENTE', id: 0 });
   const [settings, setSettings] = useState<Settings>({ meetingMode: false, greetingsEnabled: true, accent: '#D4AF37' } as any);
   
   const [showSplash, setShowSplash] = useState(false);
-  const [meetingMode, setMeetingMode] = useState(false);
   const [isFocusUltra, setIsFocusUltra] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     
+    // Escuta o perfil no caminho users/{uid}/profile/profile
     const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'profile'), (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        setProfile({ name: data.name || 'Agente', id: 0 });
-      }
+      const dbName = doc.exists() ? doc.data()?.name : null;
+      setProfile({ 
+        name: dbName || user.displayName || 'AGENTE', 
+        id: user.uid 
+      });
     });
 
     const unsubSettings = onSnapshot(doc(firestore, 'users', user.uid, 'system', 'settings'), (doc) => {
       if (doc.exists()) {
         const data = doc.data() as Settings;
         setSettings(data);
-        setMeetingMode(data.meetingMode || false);
       }
     });
 
@@ -144,9 +154,11 @@ const MainApp: React.FC = () => {
   };
 
   const toggleMeetingMode = async () => {
-    if (user) {
-      // Logic handled via props in subcomponents or direct updates in specific pages if needed
-    }
+    if (!user) return;
+    await setDoc(doc(firestore, 'users', user.uid, 'system', 'settings'), { 
+      meetingMode: !settings.meetingMode,
+      updatedAt: serverTimestamp() 
+    }, { merge: true });
   };
 
   const enterFocusUltra = () => setIsFocusUltra(true);
@@ -188,6 +200,7 @@ const MainApp: React.FC = () => {
       { id: 'system', label: 'Sistema', icon: SettingsIcon },
     ];
 
+    const meetingMode = settings.meetingMode;
     const containerClasses = meetingMode 
       ? "fixed inset-0 z-[9999] bg-[#000000] overflow-y-auto h-screen w-screen" 
       : "min-h-screen flex flex-col md:flex-row bg-[#000000] transition-all duration-300 text-base";
@@ -254,8 +267,7 @@ const MainApp: React.FC = () => {
         {!meetingMode && (
           <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#000000] border-t border-[#1a1a1a] flex justify-around items-center h-16 z-50 pb-safe">
             {mobileNavItems.map((item) => {
-              const isSystemActive = item.id === 'system' && ['system', 'pacer', 'reading', 'study', 'work'].includes(activeSection);
-              const isActive = activeSection === item.id || isSystemActive;
+              const isActive = activeSection === item.id;
               return (
                 <button
                   key={item.id}
