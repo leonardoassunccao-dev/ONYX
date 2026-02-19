@@ -38,6 +38,7 @@ export const safeAddDoc = async (
 /**
  * Safely sets a document (create or overwrite).
  * Usage: safeSetDoc(ref, data, { merge: true })
+ * Ideal for singleton documents like profile/profile or system/settings.
  */
 export const safeSetDoc = async (
   ref: DocumentReference, 

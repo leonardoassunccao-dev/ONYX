@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { db as firestore } from './lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Section, Settings, Profile } from './types';
 import { applyTheme } from './utils/theme';
 import { 
@@ -44,13 +44,11 @@ const LoginScreen: React.FC = () => {
     setError('');
     try {
       if (isRegistering) {
-        if (!name.trim()) throw new Error("Informe seu nome para registro.");
         await register(email, password, name);
       } else {
         await login(email, password);
       }
     } catch (err: any) {
-      console.error("AUTH_ERROR_UI", err);
       setError(err.message || "Erro na autenticação");
     } finally {
       setLoading(false);
@@ -65,9 +63,9 @@ const LoginScreen: React.FC = () => {
       
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         {isRegistering && (
-           <input 
+          <input 
             type="text" 
-            placeholder="NOME DO AGENTE" 
+            placeholder="NOME: LEONARDO" 
             className="w-full bg-[#0B0B0D] border border-zinc-800 p-4 text-xs font-bold text-white outline-none focus:border-[#D4AF37] uppercase tracking-wider rounded"
             value={name}
             onChange={e => setName(e.target.value)}
@@ -91,14 +89,14 @@ const LoginScreen: React.FC = () => {
           required
         />
         
-        {error && <p className="text-red-500 text-[10px] font-black uppercase text-center animate-pulse">{error}</p>}
+        {error && <p className="text-red-500 text-[10px] font-black uppercase text-center">{error}</p>}
 
         <button 
           type="submit" 
           disabled={loading}
           className="w-full bg-[#D4AF37] text-black p-4 font-black text-xs uppercase tracking-[0.2em] hover:bg-white transition-all rounded"
         >
-          {loading ? 'Processando...' : (isRegistering ? 'Registrar Credencial' : 'Iniciar Uplink')}
+          {loading ? 'Processando...' : (isRegistering ? 'Registrar Operador' : 'Iniciar Uplink')}
         </button>
       </form>
 
@@ -116,33 +114,28 @@ const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('today');
   
-  const [profile, setProfile] = useState<Profile>({ name: 'Agente', id: 0 });
+  const [profile, setProfile] = useState<Profile>({ name: 'LEONARDO', id: 0 });
   const [settings, setSettings] = useState<Settings>({ meetingMode: false, greetingsEnabled: true, accent: '#D4AF37' } as any);
   
   const [showSplash, setShowSplash] = useState(false);
-  const [meetingMode, setMeetingMode] = useState(false);
   const [isFocusUltra, setIsFocusUltra] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     
-    // Path: users/{uid}/profile/profile
-    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'profile'), (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        console.log("PROFILE_SNAPSHOT", data);
-        setProfile({ name: data.name || 'Agente', id: 0 });
-      } else {
-        console.log("PROFILE_SNAPSHOT: No Document Found");
-      }
+    // ESCUTA O PERFIL NA RAIZ DO DOCUMENTO DO USUÁRIO
+    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid), (doc) => {
+      const dbName = doc.exists() ? doc.data()?.name : null;
+      setProfile({ 
+        name: user.displayName || dbName || 'LEONARDO', 
+        id: user.uid 
+      });
     });
 
-    // Path: users/{uid}/system/settings
     const unsubSettings = onSnapshot(doc(firestore, 'users', user.uid, 'system', 'settings'), (doc) => {
       if (doc.exists()) {
         const data = doc.data() as Settings;
         setSettings(data);
-        setMeetingMode(data.meetingMode || false);
       }
     });
 
@@ -161,9 +154,11 @@ const MainApp: React.FC = () => {
   };
 
   const toggleMeetingMode = async () => {
-    if (user) {
-      // Logic handled via props in subcomponents or direct updates in specific pages if needed
-    }
+    if (!user) return;
+    await setDoc(doc(firestore, 'users', user.uid, 'system', 'settings'), { 
+      meetingMode: !settings.meetingMode,
+      updatedAt: serverTimestamp() 
+    }, { merge: true });
   };
 
   const enterFocusUltra = () => setIsFocusUltra(true);
@@ -182,7 +177,7 @@ const MainApp: React.FC = () => {
       case 'study': return <StudyPage settings={settings} />;
       case 'work': return <WorkPage settings={settings} />;
       case 'routine': return <RoutinePage settings={settings} />;
-      case 'system': return <SystemPage profile={profile} settings={settings} onRefresh={refreshAppData} onNavigate={setActiveSection} />;
+      case 'system': return <SystemPage profile={profile} settings={settings} />;
       default: return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;
     }
   };
@@ -205,6 +200,7 @@ const MainApp: React.FC = () => {
       { id: 'system', label: 'Sistema', icon: SettingsIcon },
     ];
 
+    const meetingMode = settings.meetingMode;
     const containerClasses = meetingMode 
       ? "fixed inset-0 z-[9999] bg-[#000000] overflow-y-auto h-screen w-screen" 
       : "min-h-screen flex flex-col md:flex-row bg-[#000000] transition-all duration-300 text-base";
@@ -271,8 +267,7 @@ const MainApp: React.FC = () => {
         {!meetingMode && (
           <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#000000] border-t border-[#1a1a1a] flex justify-around items-center h-16 z-50 pb-safe">
             {mobileNavItems.map((item) => {
-              const isSystemActive = item.id === 'system' && ['system', 'pacer', 'reading', 'study', 'work'].includes(activeSection);
-              const isActive = activeSection === item.id || isSystemActive;
+              const isActive = activeSection === item.id;
               return (
                 <button
                   key={item.id}

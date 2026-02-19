@@ -1,18 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db as firestore } from '../lib/firebase';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, writeBatch, collection, serverTimestamp } from 'firebase/firestore';
 import { db as dexieDb } from '../db';
-import { X, AlertTriangle } from 'lucide-react';
 
+// Enhanced AuthContextType with setGlobalError
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  globalError: string | null;
-  setGlobalError: (msg: string | null) => void;
   login: (e: string, p: string) => Promise<void>;
   register: (e: string, p: string, n: string) => Promise<void>;
   logout: () => Promise<void>;
+  setGlobalError: (error: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -22,15 +21,8 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Implementation of global error state
   const [globalError, setGlobalError] = useState<string | null>(null);
-
-  // Auto-dismiss error after 4 seconds
-  useEffect(() => {
-    if (globalError) {
-      const t = setTimeout(() => setGlobalError(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [globalError]);
 
   const migrateLocalData = async (uid: string) => {
     try {
@@ -55,19 +47,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
       await migrateTable('profile', 'profile');
-      await migrateTable('settings', 'system');
-      await migrateTable('habits', 'habit_items');
+      await migrateTable('settings', 'settings');
+      await migrateTable('habits', 'habits');
       await migrateTable('habit_checkins', 'habit_checkins');
       await migrateTable('finance_transactions', 'finance_transactions');
       await migrateTable('fixed_expenses', 'fixed_expenses');
       await migrateTable('pacer_workouts', 'pacer_workouts');
-      await migrateTable('books', 'reading_books');
+      await migrateTable('books', 'books');
       await migrateTable('reading_sessions', 'reading_sessions');
       await migrateTable('study_sessions', 'study_sessions');
-      await migrateTable('work_tasks', 'work_items');
-      await migrateTable('session_goals', 'goal_items');
+      await migrateTable('work_tasks', 'work_tasks');
+      await migrateTable('session_goals', 'session_goals');
       await migrateTable('goal_checkins', 'goal_checkins');
-      await migrateTable('quotes', 'system_quotes');
+      await migrateTable('quotes', 'quotes');
       
       batch.set(userSettingsRef, { migrated: true, updatedAt: Date.now() }, { merge: true });
       await batch.commit();
@@ -91,42 +83,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (e: string, p: string) => signInWithEmailAndPassword(auth, e, p).then(() => {});
   
   const register = async (email: string, password: string, name: string) => {
-    console.log("SIGNUP_START", { email, name });
+    // CRITICAL: Validate name before creating user
+    if (!name || !name.trim()) {
+      throw new Error("O campo 'Nome' é obrigatório para identificação do operador.");
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log("SIGNUP_AUTH_OK", { uid: userCredential.user.uid });
+      const uid = userCredential.user.uid;
 
-      const ref = doc(firestore, 'users', userCredential.user.uid, 'profile', 'profile');
-      // Use setDoc with merge to ensure the document is created if it doesn't exist
-      await setDoc(ref, {
+      // 1. Atualiza Perfil do Firebase Auth
+      await updateProfile(userCredential.user, { displayName: name.trim() });
+
+      // 2. Salva na RAIZ do documento do usuário
+      await setDoc(doc(firestore, 'users', uid), {
         name: name.trim(),
         email: email,
+        updatedAt: serverTimestamp(),
         createdAt: serverTimestamp()
       }, { merge: true });
 
-      console.log("SIGNUP_PROFILE_OK", { path: ref.path });
-    } catch (error: any) {
-      console.error("SIGNUP_FAILED", error);
-      throw error;
+      // 3. Inicializa configurações padrão
+      await setDoc(doc(firestore, 'users', uid, 'system', 'settings'), {
+        meetingMode: false,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+    } catch (err: any) {
+      console.error("Register Error:", err);
+      throw err;
     }
   };
 
   const logout = () => firebaseSignOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, loading, globalError, setGlobalError, login, register, logout }}>
-      {!loading && children}
-      
-      {/* GLOBAL ERROR TOAST */}
+    <AuthContext.Provider value={{ user, loading, login, register, logout, setGlobalError }}>
+      {/* Global Error Notification Overlay */}
       {globalError && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[99999] flex items-center gap-4 bg-[#1a0000] border border-red-800 text-red-200 px-6 py-4 rounded-md shadow-2xl animate-in slide-in-from-bottom-4 fade-in duration-300 max-w-[90vw]">
-          <AlertTriangle size={20} className="text-red-500 shrink-0" />
-          <p className="text-xs font-bold uppercase tracking-widest">{globalError}</p>
-          <button onClick={() => setGlobalError(null)} className="ml-2 text-red-500 hover:text-white">
-            <X size={16} />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] bg-red-900 text-white px-6 py-3 rounded border border-red-500 font-black text-[10px] uppercase tracking-widest shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+          <span>{globalError}</span>
+          <button onClick={() => setGlobalError(null)} className="hover:text-zinc-400 transition-colors">
+            [ FECHAR ]
           </button>
         </div>
       )}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
