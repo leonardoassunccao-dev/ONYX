@@ -1,3 +1,4 @@
+
 export type Section = 'today' | 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general' | 'system';
 
 export interface SyncMetadata {
@@ -8,6 +9,7 @@ export interface SyncMetadata {
 export interface Profile extends SyncMetadata {
   id?: any;
   name: string;
+  customPhrases?: string[];
 }
 
 export interface Settings extends SyncMetadata {

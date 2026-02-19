@@ -3,9 +3,9 @@ import { useBooks } from '../hooks/useBooks';
 import { useHabits } from '../hooks/useHabits';
 import { useQuotes } from '../hooks/useQuotes';
 import { useFinance } from '../hooks/useFinance';
-import { Profile, Settings, Quote, Section } from '../types';
+import { Profile, Settings, Section, Quote } from '../types';
 import { db as firestore } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import OnyxLogo from '../components/OnyxLogo';
 import { 
@@ -39,18 +39,20 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
   const { user } = useAuth();
   const { currentBook, getBookStats } = useBooks();
   const { getTodayHabits, getProgress: getHabitProgress, toggleBooleanHabit } = useHabits();
-  const { quotes } = useQuotes(); 
+  const { quotes, source: quoteSource } = useQuotes(); // Use full list from hook
   const { salary, patrimony, fixedExpenses, transactions } = useFinance();
   
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState('');
-  const [displayQuote, setDisplayQuote] = useState<Quote | null>(null);
   const [bootStage, setBootStage] = useState(0);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [finMetrics, setFinMetrics] = useState({ salaryUsed: 0, patrimonyPercent: 0 });
   const [anim, setAnim] = useState({ salary: 0, physical: 0, mind: 0, patrimony: 0 });
   const [currentTime, setCurrentTime] = useState('');
+  
+  // Session Quote Logic
+  const [displayQuote, setDisplayQuote] = useState<Quote | null>(null);
 
   useEffect(() => {
     const hours = new Date().getHours();
@@ -60,7 +62,57 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
     setLoading(false);
   }, []);
 
-  // Update Fin Metrics based on Hook Data
+  // --- QUOTE SELECTION LOGIC ---
+  useEffect(() => {
+    if (quotes.length === 0) return;
+    if (displayQuote) return;
+
+    let isReload = false;
+    try {
+       const navEntries = performance.getEntriesByType("navigation");
+       if (navEntries.length > 0) {
+          const nav = navEntries[0] as PerformanceNavigationTiming;
+          if (nav.type === 'reload') isReload = true;
+       } else if ((window.performance?.navigation as any)?.type === 1) {
+          isReload = true;
+       }
+    } catch (e) {
+       console.warn("Nav check failed", e);
+    }
+
+    const storedId = sessionStorage.getItem('onyx_session_quote_id');
+
+    // SCENARIO 1: Page Reload (F5) - Restore same quote
+    if (isReload && storedId) {
+       // Compare as string to handle both numeric and string IDs
+       const restored = quotes.find(q => String(q.id) === storedId);
+       if (restored) {
+          setDisplayQuote(restored);
+          return;
+       }
+    }
+
+    // SCENARIO 2: Navigation Entry - Rotate quote
+    let candidates = quotes;
+    if (storedId && quotes.length > 1) {
+        candidates = quotes.filter(q => String(q.id) !== storedId);
+    }
+
+    // Use deterministic math based on day for default consistency, or random for session
+    // Using random for "refresh" feel as implemented previously
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    const selected = candidates[randomIndex];
+    
+    setDisplayQuote(selected);
+    
+    if (selected && selected.id) {
+        sessionStorage.setItem('onyx_session_quote_id', String(selected.id));
+    }
+  }, [quotes, displayQuote]);
+
+  const finalQuoteText = displayQuote?.text || "Disciplina supera motivação.";
+  const finalQuoteAuthor = displayQuote?.author || "Onyx System";
+
   useEffect(() => {
     const totalFixed = fixedExpenses.reduce((sum, item) => sum + item.amount, 0);
     const currentMonthStr = new Date().toISOString().slice(0, 7);
@@ -75,7 +127,6 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
     setFinMetrics({ salaryUsed, patrimonyPercent });
   }, [salary, patrimony, fixedExpenses, transactions]);
 
-  // Click Outside Handler for Mobile Menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
@@ -85,41 +136,6 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Session Quote Logic
-  useEffect(() => {
-    if (quotes.length === 0) return;
-    if (displayQuote) return;
-
-    let isReload = false;
-    try {
-       const navEntries = performance.getEntriesByType("navigation");
-       if (navEntries.length > 0) {
-          const nav = navEntries[0] as PerformanceNavigationTiming;
-          if (nav.type === 'reload') isReload = true;
-       }
-    } catch (e) {
-       console.warn("Nav check", e);
-    }
-
-    const storedId = sessionStorage.getItem('onyx_session_quote_id');
-    if (isReload && storedId) {
-       const restored = quotes.find(q => q.id === Number(storedId) || q.id === storedId);
-       if (restored) {
-          setDisplayQuote(restored);
-          return;
-       }
-    }
-
-    const candidates = storedId && quotes.length > 1 ? quotes.filter(q => String(q.id) !== storedId) : quotes;
-    const randomIndex = Math.floor(Math.random() * candidates.length);
-    const selected = candidates[randomIndex];
-    
-    setDisplayQuote(selected);
-    if (selected && selected.id) {
-        sessionStorage.setItem('onyx_session_quote_id', String(selected.id));
-    }
-  }, [quotes]);
 
   useEffect(() => {
     if (!loading) {
@@ -150,9 +166,11 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
     if (onToggleMeetingMode) {
       onToggleMeetingMode();
     } else {
-        // Fallback update directly if no prop
         if (user) {
-            setDoc(doc(firestore, 'users', user.uid, 'system', 'settings'), { meetingMode: !settings.meetingMode }, { merge: true });
+            setDoc(doc(firestore, 'users', user.uid, 'system', 'settings'), { 
+                meetingMode: !settings.meetingMode,
+                updatedAt: serverTimestamp() 
+            }, { merge: true });
         }
     }
   };
@@ -167,7 +185,6 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
 
   const evolutionIndex = Math.round((Math.max(0, 100 - finMetrics.salaryUsed) + habitPercentage + readingPercentage + Math.min(finMetrics.patrimonyPercent, 100)) / 4);
 
-  // Animation Effect
   useEffect(() => {
     if (loading || bootStage < 3) return; 
     setAnim({ salary: 0, physical: 0, mind: 0, patrimony: 0 });
@@ -226,14 +243,12 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
           <div className="max-w-7xl mx-auto space-y-12">
             <div className="text-center space-y-8">
                <h1 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tight">{greeting}, <span className="text-[var(--accent-color)]">{profile.name}.</span></h1>
-               {displayQuote && (
-                  <div className="relative max-w-4xl mx-auto py-6">
-                    <div className="w-24 h-[1px] bg-[var(--accent-color)] mx-auto mb-6 opacity-60"></div>
-                    <p className="text-xl md:text-2xl font-serif italic text-zinc-300 leading-relaxed tracking-wide">"{displayQuote.text}"</p>
-                    <p className="text-xs text-[var(--accent-color)] font-bold uppercase tracking-[0.3em] mt-4 opacity-80">— {displayQuote.author}</p>
-                    <div className="w-24 h-[1px] bg-[var(--accent-color)] mx-auto mt-6 opacity-60"></div>
-                  </div>
-               )}
+               <div className="relative max-w-4xl mx-auto py-6">
+                 <div className="w-24 h-[1px] bg-[var(--accent-color)] mx-auto mb-6 opacity-60"></div>
+                 <p className="text-xl md:text-2xl font-serif italic text-zinc-300 leading-relaxed tracking-wide">"{finalQuoteText}"</p>
+                 <p className="text-xs text-[var(--accent-color)] font-bold uppercase tracking-[0.3em] mt-4 opacity-80">— {finalQuoteAuthor}</p>
+                 <div className="w-24 h-[1px] bg-[var(--accent-color)] mx-auto mt-6 opacity-60"></div>
+               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                <div className="bg-[#0B0B0B] border border-[#1a1a1a] p-8 rounded-lg flex flex-col items-center justify-center gap-4 hover:border-[var(--accent-color)]/50 transition-all">
@@ -272,9 +287,10 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
          <h1 className={`text-3xl md:text-4xl font-black text-[#f5f5f5] uppercase tracking-tight mb-8 mt-12 md:mt-0 transition-all duration-700 transform ${bootStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>{greeting}, <span className="text-[var(--accent-color)]">{profile.name}.</span></h1>
          <div className={`max-w-2xl mx-auto relative py-6 transition-all duration-700 transform ${bootStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-[var(--accent-color)]/30"></div>
-            {displayQuote ? (
-              <div className="space-y-3 px-4"><p className="text-sm md:text-lg font-medium text-zinc-400 tracking-wide leading-relaxed font-serif italic opacity-90">{displayQuote.text}</p>{displayQuote.author && <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em] pt-2">{displayQuote.author}</p>}</div>
-            ) : <p className="text-xs text-zinc-600 uppercase tracking-widest">Carregando diretriz diária...</p>}
+            <div className="space-y-3 px-4">
+              <p className="text-sm md:text-lg font-medium text-zinc-400 tracking-wide leading-relaxed font-serif italic opacity-90">{finalQuoteText}</p>
+              <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em] pt-2">{finalQuoteAuthor}</p>
+            </div>
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-[var(--accent-color)]/30"></div>
          </div>
       </header>
@@ -344,6 +360,11 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
           )}
         </div>
       </section>
+      
+      {/* Debug Footer */}
+      <div className="text-center opacity-30 pb-4">
+         <p className="text-[7px] font-mono text-zinc-500 uppercase">PHRASES_SOURCE: {quoteSource?.toUpperCase()}</p>
+      </div>
     </div>
   );
 };

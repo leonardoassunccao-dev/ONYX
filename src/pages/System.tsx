@@ -5,10 +5,11 @@ import { db } from '../lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { applyTheme } from '../utils/theme';
+import { useQuotes } from '../hooks/useQuotes';
 import Card from '../components/Card';
 import { 
   User, Monitor, LogOut, Edit2, Check, X, Terminal, 
-  Palette, Shield
+  Palette, Shield, Quote as QuoteIcon, Plus, Trash2
 } from 'lucide-react';
 
 interface SystemProps {
@@ -19,11 +20,12 @@ interface SystemProps {
 
 const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
   const { user, logout } = useAuth();
-  const [isEditingName, setIsEditingName] = useState(false);
+  const { quotes, addQuote, deleteQuote, source: quoteSource } = useQuotes();
   
-  // Garante que o nome seja exibido corretamente (Profile > Auth > Fallback)
+  const [isEditingName, setIsEditingName] = useState(false);
   const currentDisplayName = profile.name || user?.displayName || "AGENTE";
   const [tempName, setTempName] = useState(currentDisplayName);
+  const [newPhrase, setNewPhrase] = useState('');
 
   useEffect(() => {
     if (!isEditingName) {
@@ -36,14 +38,11 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
     const trimmed = tempName.trim();
     if (trimmed) {
       try {
-        // CORREÇÃO CRÍTICA: Usar setDoc com merge em vez de updateDoc
-        // CORREÇÃO BUILD: Usando serverTimestamp() para corrigir erro de variável não utilizada
         await setDoc(doc(db, 'users', user.uid, 'profile', 'profile'), { 
           name: trimmed,
           updatedAt: serverTimestamp()
         }, { merge: true });
         
-        // Atualiza também o profile do Auth para consistência
         await updateProfile(user, { displayName: trimmed });
       } catch (error) {
         console.error("Erro ao salvar nome:", error);
@@ -60,7 +59,6 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
   const toggleMeetingMode = async () => {
     if (!user) return;
     try {
-      // CORREÇÃO BUILD: Usando serverTimestamp()
       await setDoc(doc(db, 'users', user.uid, 'system', 'settings'), { 
         meetingMode: !settings.meetingMode,
         updatedAt: serverTimestamp()
@@ -72,6 +70,12 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
 
   const handleThemeChange = (theme: 'gold' | 'silver' | 'emerald') => {
     applyTheme(theme);
+  };
+
+  const handleAddPhrase = () => {
+    if (!newPhrase.trim()) return;
+    addQuote(newPhrase.trim());
+    setNewPhrase('');
   };
 
   return (
@@ -188,6 +192,48 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
                </div>
             </Card>
 
+            {/* Custom Phrases Management */}
+            <Card className="flex flex-col justify-between lg:col-span-2 min-h-[300px]">
+               <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-2">
+                    <QuoteIcon size={14} className="text-[var(--accent-color)]" />
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Diretrizes Diárias</span>
+                  </div>
+                  <span className="text-[8px] font-black text-zinc-700 uppercase tracking-widest">
+                    Source: {quoteSource?.toUpperCase()}
+                  </span>
+               </div>
+
+               <div className="flex-1 space-y-4">
+                  <div className="flex gap-2">
+                     <input 
+                        type="text" 
+                        value={newPhrase}
+                        onChange={(e) => setNewPhrase(e.target.value)}
+                        placeholder="NOVA DIRETRIZ"
+                        className="flex-1 bg-[#121212] border border-zinc-800 p-3 rounded text-xs text-white uppercase font-bold outline-none focus:border-[var(--accent-color)]"
+                     />
+                     <button onClick={handleAddPhrase} className="bg-zinc-800 hover:bg-[var(--accent-color)] text-white hover:text-black p-3 rounded transition-all">
+                        <Plus size={16} />
+                     </button>
+                  </div>
+
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                     {quotes.map((quote, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-[#121212] p-3 rounded border border-zinc-900 group hover:border-zinc-700 transition-colors">
+                           <span className="text-[10px] font-medium text-zinc-300 italic">"{quote.text}"</span>
+                           <button onClick={() => deleteQuote(quote.id)} className="text-zinc-700 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                              <Trash2 size={12} />
+                           </button>
+                        </div>
+                     ))}
+                     {quotes.length === 0 && (
+                        <p className="text-[9px] text-zinc-700 font-bold uppercase text-center py-4">Nenhuma diretriz definida.</p>
+                     )}
+                  </div>
+               </div>
+            </Card>
+
             <Card accentBorder className="flex flex-col justify-between lg:col-span-2">
                <div className="flex justify-between items-start">
                   <div>
@@ -207,6 +253,11 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
             </Card>
          </div>
       </section>
+      
+      {/* Debug Footer */}
+      <div className="text-center opacity-30">
+         <p className="text-[7px] font-mono text-zinc-500 uppercase">PHRASES_SOURCE: {quoteSource?.toUpperCase()}</p>
+      </div>
     </div>
   );
 };

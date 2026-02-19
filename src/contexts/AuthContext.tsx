@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db as firestore } from '../lib/firebase';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, writeBatch, collection } from 'firebase/firestore';
-import { db as dexieDb } from '../db';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -22,57 +21,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  const migrateLocalData = async (uid: string) => {
-    try {
-      const userSettingsRef = doc(firestore, 'users', uid, 'system', 'settings');
-      const settingsSnap = await getDoc(userSettingsRef);
-
-      if (settingsSnap.exists() && settingsSnap.data().migrated) {
-        return;
-      }
-
-      console.log("MIGRATING DATA...");
-      const batch = writeBatch(firestore);
-      
-      const migrateTable = async (tableName: string, collectionName: string) => {
-        const items = await (dexieDb as any).table(tableName).toArray();
-        items.forEach((item: any) => {
-          const docId = item.id ? item.id.toString() : doc(collection(firestore, 'users', uid, collectionName)).id;
-          const docRef = doc(firestore, 'users', uid, collectionName, docId);
-          const { id, ...data } = item;
-          batch.set(docRef, { ...data, migratedAt: Date.now() });
-        });
-      };
-
-      await migrateTable('profile', 'profile');
-      await migrateTable('settings', 'settings');
-      await migrateTable('habits', 'habits');
-      await migrateTable('habit_checkins', 'habit_checkins');
-      await migrateTable('finance_transactions', 'finance_transactions');
-      await migrateTable('fixed_expenses', 'fixed_expenses');
-      await migrateTable('pacer_workouts', 'pacer_workouts');
-      await migrateTable('books', 'books');
-      await migrateTable('reading_sessions', 'reading_sessions');
-      await migrateTable('study_sessions', 'study_sessions');
-      await migrateTable('work_tasks', 'work_tasks');
-      await migrateTable('session_goals', 'session_goals');
-      await migrateTable('goal_checkins', 'goal_checkins');
-      await migrateTable('quotes', 'quotes');
-      
-      batch.set(userSettingsRef, { migrated: true, updatedAt: Date.now() }, { merge: true });
-      await batch.commit();
-      console.log("MIGRATION DONE.");
-    } catch (error) {
-      console.error("Migration error:", error);
-    }
-  };
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        await migrateLocalData(currentUser.uid);
-      }
       setLoading(false);
     });
     return unsubscribe;
@@ -80,11 +31,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (e: string, p: string) => signInWithEmailAndPassword(auth, e, p).then(() => {});
   
-  const register = async (e: string, p: string, n: string) => {
-    const cred = await createUserWithEmailAndPassword(auth, e, p);
-    // Criação segura do documento de perfil
-    await setDoc(doc(firestore, 'users', cred.user.uid, 'profile', 'profile'), {
-      name: n || 'Agente'
+  const register = async (email: string, password: string, name: string) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
+    
+    // Minimal profile creation
+    await setDoc(doc(firestore, 'users', uid, 'profile', 'profile'), {
+      name: name || 'Agente',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    
+    await setDoc(doc(firestore, 'users', uid, 'system', 'settings'), {
+      meetingMode: false,
+      greetingsEnabled: true,
+      accent: '#D4AF37',
+      updatedAt: serverTimestamp()
     }, { merge: true });
   };
 
