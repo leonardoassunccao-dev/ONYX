@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc } from 'firebase/firestore';
 import { Book, ReadingSession } from '../types';
+import { safeAddDoc, safeDeleteDoc, safeUpdateDoc } from '../lib/firestoreSafe';
 
 export function useBooks() {
-  const { user } = useAuth();
+  const { user, setGlobalError } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [sessions, setSessions] = useState<ReadingSession[]>([]);
   const todayStr = new Date().toISOString().split('T')[0];
@@ -13,12 +14,14 @@ export function useBooks() {
   useEffect(() => {
     if (!user) return;
 
-    const qBooks = query(collection(db, 'users', user.uid, 'reading', 'books'), orderBy('createdAt', 'desc'));
+    // Path: users/{uid}/reading_books
+    const qBooks = query(collection(db, 'users', user.uid, 'reading_books'), orderBy('createdAt', 'desc'));
     const unsubBooks = onSnapshot(qBooks, (snap) => {
       setBooks(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
-    const unsubSessions = onSnapshot(collection(db, 'users', user.uid, 'reading', 'sessions'), (snap) => {
+    // Path: users/{uid}/reading_sessions
+    const unsubSessions = onSnapshot(collection(db, 'users', user.uid, 'reading_sessions'), (snap) => {
       setSessions(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
     });
 
@@ -60,43 +63,53 @@ export function useBooks() {
   };
 
   const addBook = async (title: string, pagesTotal?: number) => {
-    if (!user) return;
+    if (!user) { setGlobalError("Login necessário"); return; }
     const today = new Date().toISOString().split('T')[0];
-    await addDoc(collection(db, 'users', user.uid, 'reading', 'books'), {
+    const res = await safeAddDoc(collection(db, 'users', user.uid, 'reading_books'), {
       title,
       status: 'reading',
-      createdAt: Date.now(),
       pagesTotalOptional: pagesTotal,
       currentPage: 0,
       dailyPagesGoal: 10,
       startedAt: today
     });
+    if (!res.success) setGlobalError(res.error || "Erro ao adicionar livro");
   };
 
   const updateBook = async (id: any, data: Partial<Book>) => {
-    if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'reading', 'books', id), data);
+    if (!user) { setGlobalError("Login necessário"); return; }
+    const res = await safeUpdateDoc(doc(db, 'users', user.uid, 'reading_books', id), data);
+    if (!res.success) setGlobalError(res.error || "Erro ao atualizar livro");
   };
 
   const deleteBook = async (id: any) => {
-    if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'reading', 'books', id));
+    if (!user) { setGlobalError("Login necessário"); return; }
+    const res = await safeDeleteDoc(doc(db, 'users', user.uid, 'reading_books', id));
+    if (!res.success) setGlobalError(res.error || "Erro ao deletar livro");
   };
 
   const logSession = async (bookId: any, pages: number) => {
-    if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'reading', 'sessions'), {
+    if (!user) { setGlobalError("Login necessário"); return; }
+    
+    // 1. Add Session
+    const resSession = await safeAddDoc(collection(db, 'users', user.uid, 'reading_sessions'), {
       bookId,
       date: todayStr,
-      pages,
-      updatedAt: Date.now()
+      pages
     });
+    if (!resSession.success) {
+        setGlobalError(resSession.error || "Erro ao logar sessão");
+        return;
+    }
 
+    // 2. Update Book Progress
     const book = books.find(b => b.id === bookId);
     if (book) {
       let newCurrent = (book.currentPage || 0) + pages;
       if (book.pagesTotalOptional) newCurrent = Math.min(newCurrent, book.pagesTotalOptional);
-      await updateDoc(doc(db, 'users', user.uid, 'reading', 'books', bookId), { currentPage: newCurrent });
+      
+      const resUpdate = await safeUpdateDoc(doc(db, 'users', user.uid, 'reading_books', bookId), { currentPage: newCurrent });
+      if (!resUpdate.success) setGlobalError("Sessão salva, mas erro ao atualizar progresso do livro.");
     }
   };
 

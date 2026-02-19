@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, doc, query, where } from 'firebase/firestore';
 import { SessionGoal, GoalSession, GoalTemplate } from '../types';
+import { safeAddDoc, safeDeleteDoc, safeUpdateDoc } from '../lib/firestoreSafe';
 
 export function useGoals(sessionFilter?: GoalSession) {
-  const { user } = useAuth();
+  const { user, setGlobalError } = useAuth();
   const [goals, setGoals] = useState<SessionGoal[]>([]);
   const [checkins, setCheckins] = useState<any[]>([]);
   const [templates, setTemplates] = useState<GoalTemplate[]>([]);
@@ -16,22 +17,24 @@ export function useGoals(sessionFilter?: GoalSession) {
   useEffect(() => {
     if (!user) return;
 
+    // Path: users/{uid}/goal_items
     const qGoals = sessionFilter 
-      ? query(collection(db, 'users', user.uid, 'goals', 'items'), where('session', '==', sessionFilter))
-      : collection(db, 'users', user.uid, 'goals', 'items');
+      ? query(collection(db, 'users', user.uid, 'goal_items'), where('session', '==', sessionFilter))
+      : collection(db, 'users', user.uid, 'goal_items');
 
     const unsubGoals = onSnapshot(qGoals, (snap) => setGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
     
-    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'goals', 'checkins'), (snap) => setCheckins(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
+    // Path: users/{uid}/goal_checkins
+    const unsubCheckins = onSnapshot(collection(db, 'users', user.uid, 'goal_checkins'), (snap) => setCheckins(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))));
     
-    // Templates can be global or user specific. Using user specific for sync simplicity.
-    const unsubTemplates = onSnapshot(collection(db, 'users', user.uid, 'goals', 'templates'), (snap) => {
+    // Path: users/{uid}/goal_templates
+    const unsubTemplates = onSnapshot(collection(db, 'users', user.uid, 'goal_templates'), (snap) => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       setTemplates(sessionFilter ? all.filter((t: any) => t.session === sessionFilter) : all);
     });
     
-    // For finance goals progress tracking
-    const unsubTrans = onSnapshot(collection(db, 'users', user.uid, 'finance', 'transactions'), (snap) => setTransactions(snap.docs.map(d => d.data())));
+    // Path: users/{uid}/finance_transactions (for finance goals)
+    const unsubTrans = onSnapshot(collection(db, 'users', user.uid, 'finance_transactions'), (snap) => setTransactions(snap.docs.map(d => d.data())));
 
     return () => { unsubGoals(); unsubCheckins(); unsubTemplates(); unsubTrans(); };
   }, [user, sessionFilter]);
@@ -95,14 +98,15 @@ export function useGoals(sessionFilter?: GoalSession) {
   };
 
   const addGoal = async (goal: any) => {
-    if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'goals', 'items'), { ...goal, createdAt: Date.now(), done: false });
+    if (!user) { setGlobalError("Login necessário"); return; }
+    const res = await safeAddDoc(collection(db, 'users', user.uid, 'goal_items'), { ...goal, done: false });
+    if (!res.success) setGlobalError(res.error || "Erro ao adicionar meta");
   };
 
   const createFromTemplate = async (template: GoalTemplate) => {
-    if (!user) return;
+    if (!user) { setGlobalError("Login necessário"); return; }
     const today = new Date().toISOString().split('T')[0];
-    await addDoc(collection(db, 'users', user.uid, 'goals', 'items'), {
+    const res = await safeAddDoc(collection(db, 'users', user.uid, 'goal_items'), {
       session: template.session,
       title: template.title,
       type: template.type,
@@ -113,24 +117,27 @@ export function useGoals(sessionFilter?: GoalSession) {
       startDate: today,
       dueDate: template.type === 'one_time' ? today : undefined,
       active: true,
-      done: false,
-      createdAt: Date.now()
+      done: false
     });
+    if (!res.success) setGlobalError(res.error || "Erro ao aplicar template");
   };
 
   const checkin = async (goalId: any, value: number, notes?: string) => {
-    if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'goals', 'checkins'), { goalId, date: todayStr, value, notes });
+    if (!user) { setGlobalError("Login necessário"); return; }
+    const res = await safeAddDoc(collection(db, 'users', user.uid, 'goal_checkins'), { goalId, date: todayStr, value, notes });
+    if (!res.success) setGlobalError(res.error || "Erro ao fazer checkin");
   };
 
   const deleteGoal = async (id: any) => {
-    if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'goals', 'items', id));
+    if (!user) { setGlobalError("Login necessário"); return; }
+    const res = await safeDeleteDoc(doc(db, 'users', user.uid, 'goal_items', id));
+    if (!res.success) setGlobalError(res.error || "Erro ao remover meta");
   };
 
   const toggleActive = async (id: any, active: boolean) => {
-    if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'goals', 'items', id), { active });
+    if (!user) { setGlobalError("Login necessário"); return; }
+    const res = await safeUpdateDoc(doc(db, 'users', user.uid, 'goal_items', id), { active });
+    if (!res.success) setGlobalError(res.error || "Erro ao atualizar meta");
   };
 
   return { goals, templates, calculateProgress, addGoal, createFromTemplate, checkin, deleteGoal, toggleActive };

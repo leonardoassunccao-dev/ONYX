@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { Quote } from '../types';
+import { safeAddDoc, safeDeleteDoc, safeSetDoc } from '../lib/firestoreSafe';
 
 export function useQuotes() {
-  const { user } = useAuth();
+  const { user, setGlobalError } = useAuth();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [dailyQuote, setDailyQuote] = useState<Quote | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    // users/{uid}/system/quotes (custom quotes) + Default Ones? 
-    // Simplified: Just use a collection for simplicity as requested by "users/{uid}/..." rule
+    // users/{uid}/system/quotes
     const unsub = onSnapshot(collection(db, 'users', user.uid, 'system', 'quotes'), (snap) => {
       const qs = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       setQuotes(qs);
@@ -35,7 +35,7 @@ export function useQuotes() {
       if (meta.daily_quote_date !== today) {
         meta.daily_quote_index = (meta.daily_quote_index + 1) % quotes.length;
         meta.daily_quote_date = today;
-        await setDoc(settingsRef, meta, { merge: true });
+        await safeSetDoc(settingsRef, meta, { merge: true });
       }
 
       const index = meta.daily_quote_index < quotes.length ? meta.daily_quote_index : 0;
@@ -46,13 +46,15 @@ export function useQuotes() {
   }, [user, quotes]);
 
   const addQuote = async (text: string, author?: string) => {
-    if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'system', 'quotes'), { text, author, isCustom: true, updatedAt: Date.now() });
+    if (!user) { setGlobalError("Login necessário"); return; }
+    const res = await safeAddDoc(collection(db, 'users', user.uid, 'system', 'quotes'), { text, author, isCustom: true });
+    if (!res.success) setGlobalError(res.error || "Erro ao adicionar frase");
   };
 
   const deleteQuote = async (id: any) => {
     if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'system', 'quotes', id));
+    const res = await safeDeleteDoc(doc(db, 'users', user.uid, 'system', 'quotes', id));
+    if (!res.success) setGlobalError(res.error || "Erro ao deletar frase");
   };
 
   return {

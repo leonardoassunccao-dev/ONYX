@@ -33,6 +33,7 @@ const LoginScreen: React.FC = () => {
   const { login, register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,8 @@ const LoginScreen: React.FC = () => {
     setError('');
     try {
       if (isRegistering) {
-        await register(email, password);
+        if (!name.trim()) throw new Error("O nome é obrigatório.");
+        await register(email, password, name);
       } else {
         await login(email, password);
       }
@@ -60,6 +62,16 @@ const LoginScreen: React.FC = () => {
       <h1 className="text-2xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase mb-12">BEM VINDO AO ONYX</h1>
       
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        {isRegistering && (
+          <input 
+            type="text" 
+            placeholder="IDENTIFICAÇÃO (NOME)" 
+            className="w-full bg-[#0B0B0D] border border-zinc-800 p-4 text-xs font-bold text-white outline-none focus:border-[#D4AF37] uppercase tracking-wider rounded"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+        )}
         <input 
           type="email" 
           placeholder="IDENTIFICAÇÃO (EMAIL)" 
@@ -112,8 +124,8 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
-    // users/{uid}/profile/main
-    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'main'), (doc) => {
+    // users/{uid}/profile/profile - Standardized path
+    const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'profile'), (doc) => {
       if (doc.exists()) {
         const data = doc.data();
         setProfile({ name: data.name || 'Agente', id: 0 });
