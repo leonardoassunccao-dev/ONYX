@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Settings } from '../types';
 import Card from '../components/Card';
-import { Plus, CheckCircle2, Circle, Trash2, Briefcase } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import { useWork } from '../hooks/useWork';
 
-const WorkPage: React.FC<{ settings: Settings }> = ({ settings }) => {
+const WorkPage: React.FC<{ settings: Settings }> = () => {
   const { tasks, addTask, toggleTask, deleteTask } = useWork();
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');

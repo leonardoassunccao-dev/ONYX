@@ -6,7 +6,7 @@ interface OnyxLogoProps {
   className?: string;
 }
 
-const OnyxLogo: React.FC<OnyxLogoProps> = ({ size = 32, animated = false, className = '' }) => {
+const OnyxLogo: React.FC<OnyxLogoProps> = ({ size = 32, className = '' }) => {
   return (
     <div className={`inline-block ${className}`} style={{ width: size, height: size }}>
       <svg

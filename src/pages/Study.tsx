@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { Plus, GraduationCap, Clock, Trash2 } from 'lucide-react';
 import { useStudy } from '../hooks/useStudy';
 
-const StudyPage: React.FC<{ settings: Settings }> = ({ settings }) => {
+const StudyPage: React.FC<{ settings: Settings }> = () => {
   const { sessions, addSession, deleteSession } = useStudy();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ subject: '', minutes: 45 });

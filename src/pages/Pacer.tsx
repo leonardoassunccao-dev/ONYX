@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import { usePacer } from '../hooks/usePacer';
 
-const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
+const PacerPage: React.FC<{ settings: Settings }> = () => {
   const { workouts, addWorkout, toggleWorkout, deleteWorkout } = usePacer();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({

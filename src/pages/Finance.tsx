@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { useFinance } from '../hooks/useFinance';
 import { Plus, Trash2, Edit2, TrendingUp, DollarSign, Wallet, CreditCard, Lock, Activity } from 'lucide-react';
 
-const FinancePage: React.FC<{ settings: Settings }> = ({ settings }) => {
+const FinancePage: React.FC<{ settings: Settings }> = () => {
   const { transactions, fixedExpenses, salary, patrimony, addTransaction, deleteTransaction, addFixedExpense, deleteFixedExpense, updateSalary, updatePatrimony } = useFinance();
 
   const [editingSalary, setEditingSalary] = useState(false);

@@ -17,7 +17,7 @@ interface SystemProps {
   onNavigate?: (section: Section) => void;
 }
 
-const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNavigate }) => {
+const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
   const { user, logout } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(profile.name);
