@@ -177,7 +177,8 @@ const MainApp: React.FC = () => {
       case 'study': return <StudyPage settings={settings} />;
       case 'work': return <WorkPage settings={settings} />;
       case 'routine': return <RoutinePage settings={settings} />;
-      case 'system': return <SystemPage profile={profile} settings={settings} onRefresh={refreshAppData} onNavigate={setActiveSection} />;
+      // Removido onRefresh para corrigir erro de tipo no build
+      case 'system': return <SystemPage profile={profile} settings={settings} onNavigate={setActiveSection} />;
       default: return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;
     }
   };

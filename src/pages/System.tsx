@@ -14,11 +14,10 @@ import {
 interface SystemProps {
   profile: Profile;
   settings: Settings;
-  onRefresh: () => void;
   onNavigate?: (section: any) => void;
 }
 
-const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh }) => {
+const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
   const { user, logout } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   
@@ -38,8 +37,10 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh }) => 
     if (trimmed) {
       try {
         // CORREÇÃO CRÍTICA: Usar setDoc com merge em vez de updateDoc
+        // CORREÇÃO BUILD: Usando serverTimestamp() para corrigir erro de variável não utilizada
         await setDoc(doc(db, 'users', user.uid, 'profile', 'profile'), { 
-          name: trimmed 
+          name: trimmed,
+          updatedAt: serverTimestamp()
         }, { merge: true });
         
         // Atualiza também o profile do Auth para consistência
@@ -59,8 +60,10 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh }) => 
   const toggleMeetingMode = async () => {
     if (!user) return;
     try {
+      // CORREÇÃO BUILD: Usando serverTimestamp()
       await setDoc(doc(db, 'users', user.uid, 'system', 'settings'), { 
-        meetingMode: !settings.meetingMode 
+        meetingMode: !settings.meetingMode,
+        updatedAt: serverTimestamp()
       }, { merge: true });
     } catch (error) {
       console.error("Erro ao alternar modo reunião:", error);
