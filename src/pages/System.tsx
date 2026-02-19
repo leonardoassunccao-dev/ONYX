@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Profile, Settings, Section } from '../types';
+import { Profile, Settings } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -7,7 +7,7 @@ import { updateProfile } from 'firebase/auth';
 import { applyTheme } from '../utils/theme';
 import Card from '../components/Card';
 import { 
-  User, Monitor, LogOut, Edit2, Check, X, Terminal, 
+  User, Monitor, LogOut, Edit2, Check, X, 
   Palette, Shield
 } from 'lucide-react';
 
@@ -20,8 +20,8 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
   const { user, logout } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   
-  // Prioridade: displayName do Auth > Nome do Firestore > Fallback
-  const currentDisplayName = user?.displayName || profile.name || "LEONARDO";
+  // CORREÇÃO: Prioridade do nome: Profile (DB) > Auth > Fallback
+  const currentDisplayName = profile.name || user?.displayName || "AGENTE";
   const [tempName, setTempName] = useState(currentDisplayName);
 
   // Sincroniza o input local se o perfil externo mudar
@@ -36,13 +36,13 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
     const trimmed = tempName.trim();
     if (trimmed) {
       try {
-        // 1. Salva de forma definitiva na raiz do usuário
+        // CORREÇÃO: Salva na raiz users/{uid} com merge true
         await setDoc(doc(db, 'users', user.uid), { 
           name: trimmed,
           updatedAt: serverTimestamp() 
         }, { merge: true });
 
-        // 2. Atualiza o Perfil do Firebase Auth para persistência imediata na sessão
+        // Atualiza o Firebase Auth para refletir mudança na sessão
         await updateProfile(user, { displayName: trimmed });
         
         setIsEditingName(false);

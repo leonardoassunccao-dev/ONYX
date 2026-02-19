@@ -65,7 +65,7 @@ const LoginScreen: React.FC = () => {
         {isRegistering && (
           <input 
             type="text" 
-            placeholder="NOME: LEONARDO" 
+            placeholder="NOME DO AGENTE" 
             className="w-full bg-[#0B0B0D] border border-zinc-800 p-4 text-xs font-bold text-white outline-none focus:border-[#D4AF37] uppercase tracking-wider rounded"
             value={name}
             onChange={e => setName(e.target.value)}
@@ -96,7 +96,7 @@ const LoginScreen: React.FC = () => {
           disabled={loading}
           className="w-full bg-[#D4AF37] text-black p-4 font-black text-xs uppercase tracking-[0.2em] hover:bg-white transition-all rounded"
         >
-          {loading ? 'Processando...' : (isRegistering ? 'Registrar Operador' : 'Iniciar Uplink')}
+          {loading ? 'Processando...' : (isRegistering ? 'Registrar Agente' : 'Iniciar Uplink')}
         </button>
       </form>
 
@@ -114,7 +114,7 @@ const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('today');
   
-  const [profile, setProfile] = useState<Profile>({ name: 'LEONARDO', id: 0 });
+  const [profile, setProfile] = useState<Profile>({ name: 'AGENTE', id: 0 });
   const [settings, setSettings] = useState<Settings>({ meetingMode: false, greetingsEnabled: true, accent: '#D4AF37' } as any);
   
   const [showSplash, setShowSplash] = useState(false);
@@ -123,11 +123,12 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
-    // ESCUTA O PERFIL NA RAIZ DO DOCUMENTO DO USUÁRIO
+    // CORREÇÃO: Escutar raiz do usuário (users/{uid}) em vez de profile/profile
     const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid), (doc) => {
       const dbName = doc.exists() ? doc.data()?.name : null;
+      // CORREÇÃO: Prioridade para o nome do banco de dados
       setProfile({ 
-        name: user.displayName || dbName || 'LEONARDO', 
+        name: dbName || user.displayName || 'AGENTE', 
         id: user.uid 
       });
     });
