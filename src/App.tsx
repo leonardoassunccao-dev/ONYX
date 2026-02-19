@@ -44,13 +44,14 @@ const LoginScreen: React.FC = () => {
     setError('');
     try {
       if (isRegistering) {
-        if (!name.trim()) throw new Error("O nome é obrigatório.");
+        if (!name.trim()) throw new Error("Informe seu nome para registro.");
         await register(email, password, name);
       } else {
         await login(email, password);
       }
     } catch (err: any) {
-      setError(err.message);
+      console.error("AUTH_ERROR_UI", err);
+      setError(err.message || "Erro na autenticação");
     } finally {
       setLoading(false);
     }
@@ -59,13 +60,14 @@ const LoginScreen: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-[#000000] flex flex-col items-center justify-center p-8">
       <OnyxLogo size={64} className="mb-8" />
-      <h1 className="text-2xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase mb-12">BEM VINDO AO ONYX</h1>
+      <h1 className="text-2xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase mb-2">ONYX SYSTEM</h1>
+      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-12">Acesso Restrito // Identificação Requerida</p>
       
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         {isRegistering && (
-          <input 
+           <input 
             type="text" 
-            placeholder="IDENTIFICAÇÃO (NOME)" 
+            placeholder="NOME DO AGENTE" 
             className="w-full bg-[#0B0B0D] border border-zinc-800 p-4 text-xs font-bold text-white outline-none focus:border-[#D4AF37] uppercase tracking-wider rounded"
             value={name}
             onChange={e => setName(e.target.value)}
@@ -89,14 +91,14 @@ const LoginScreen: React.FC = () => {
           required
         />
         
-        {error && <p className="text-red-500 text-[10px] font-black uppercase text-center">{error}</p>}
+        {error && <p className="text-red-500 text-[10px] font-black uppercase text-center animate-pulse">{error}</p>}
 
         <button 
           type="submit" 
           disabled={loading}
           className="w-full bg-[#D4AF37] text-black p-4 font-black text-xs uppercase tracking-[0.2em] hover:bg-white transition-all rounded"
         >
-          {loading ? 'Processando...' : (isRegistering ? 'Registrar Agente' : 'INICIAR')}
+          {loading ? 'Processando...' : (isRegistering ? 'Registrar Credencial' : 'Iniciar Uplink')}
         </button>
       </form>
 
@@ -124,15 +126,18 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
-    // users/{uid}/profile/profile - Standardized path
+    // Path: users/{uid}/profile/profile
     const unsubProfile = onSnapshot(doc(firestore, 'users', user.uid, 'profile', 'profile'), (doc) => {
       if (doc.exists()) {
         const data = doc.data();
+        console.log("PROFILE_SNAPSHOT", data);
         setProfile({ name: data.name || 'Agente', id: 0 });
+      } else {
+        console.log("PROFILE_SNAPSHOT: No Document Found");
       }
     });
 
-    // users/{uid}/system/settings
+    // Path: users/{uid}/system/settings
     const unsubSettings = onSnapshot(doc(firestore, 'users', user.uid, 'system', 'settings'), (doc) => {
       if (doc.exists()) {
         const data = doc.data() as Settings;
@@ -156,7 +161,9 @@ const MainApp: React.FC = () => {
   };
 
   const toggleMeetingMode = async () => {
-    // Logic can be added here if needed to lift state up
+    if (user) {
+      // Logic handled via props in subcomponents or direct updates in specific pages if needed
+    }
   };
 
   const enterFocusUltra = () => setIsFocusUltra(true);

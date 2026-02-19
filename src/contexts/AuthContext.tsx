@@ -54,9 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       };
 
-      // Standardized Paths for Migration
-      await migrateTable('profile', 'profile'); // Migrates to users/{uid}/profile (will need manual handling for docId if strictly 'profile')
-      await migrateTable('settings', 'system'); // Migrates to users/{uid}/system
+      await migrateTable('profile', 'profile');
+      await migrateTable('settings', 'system');
       await migrateTable('habits', 'habit_items');
       await migrateTable('habit_checkins', 'habit_checkins');
       await migrateTable('finance_transactions', 'finance_transactions');
@@ -92,13 +91,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (e: string, p: string) => signInWithEmailAndPassword(auth, e, p).then(() => {});
   
   const register = async (email: string, password: string, name: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    // Create profile document immediately
-    await setDoc(doc(firestore, 'users', userCredential.user.uid, 'profile', 'profile'), {
-      name: name,
-      email: email,
-      createdAt: serverTimestamp()
-    }, { merge: true });
+    console.log("SIGNUP_START", { email, name });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("SIGNUP_AUTH_OK", { uid: userCredential.user.uid });
+
+      const ref = doc(firestore, 'users', userCredential.user.uid, 'profile', 'profile');
+      // Use setDoc with merge to ensure the document is created if it doesn't exist
+      await setDoc(ref, {
+        name: name.trim(),
+        email: email,
+        createdAt: serverTimestamp()
+      }, { merge: true });
+
+      console.log("SIGNUP_PROFILE_OK", { path: ref.path });
+    } catch (error: any) {
+      console.error("SIGNUP_FAILED", error);
+      throw error;
+    }
   };
 
   const logout = () => firebaseSignOut(auth);

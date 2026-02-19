@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Profile, Settings, Section } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { applyTheme } from '../utils/theme';
 import Card from '../components/Card';
 import { 
-  User, Monitor, LogOut, Check, Terminal, 
+  User, Monitor, LogOut, Edit2, Check, X, Terminal, 
   Palette, Shield
 } from 'lucide-react';
 
@@ -17,14 +17,40 @@ interface SystemProps {
   onNavigate?: (section: Section) => void;
 }
 
-const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
+const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNavigate }) => {
   const { user, logout } = useAuth();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(profile.name);
+
+  const saveName = async () => {
+    if (!user) return;
+    const trimmed = tempName.trim();
+    if (trimmed) {
+      // CRITICAL FIX: Use setDoc with merge to prevent "No document to update" error if profile doesn't exist yet
+      await setDoc(
+        doc(db, 'users', user.uid, 'profile', 'profile'),
+        { name: trimmed, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+    }
+    setIsEditingName(false);
+  };
+
+  const cancelEdit = () => {
+    setIsEditingName(false);
+    setTempName(profile.name);
+  };
 
   const toggleMeetingMode = async () => {
     if (!user?.uid) return;
     try {
       const ref = doc(db, "users", user.uid, "system", "settings");
-      await setDoc(ref, { meetingMode: !settings.meetingMode }, { merge: true });
+      // CRITICAL FIX: Use setDoc with merge for settings as well
+      await setDoc(
+        ref, 
+        { meetingMode: !settings.meetingMode, updatedAt: serverTimestamp() }, 
+        { merge: true }
+      );
     } catch (err) {
       console.error("Toggle Mode Error", err);
     }
@@ -44,7 +70,6 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
         </div>
       </header>
 
-      {/* GRUPO 1: IDENTIDADE & ACESSO */}
       <section className="space-y-6">
          <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
             <User size={12} className="text-[var(--accent-color)]" /> Identidade & Acesso
@@ -57,17 +82,46 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
                     <User size={14} className="text-[var(--accent-color)]" />
                     <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Identificação</span>
                   </div>
+                  {!isEditingName && (
+                     <button 
+                       onClick={() => setIsEditingName(true)} 
+                       className="text-[9px] font-bold text-zinc-600 hover:text-[var(--accent-color)] uppercase tracking-widest transition-colors flex items-center gap-1"
+                     >
+                       <Edit2 size={10} /> Editar
+                     </button>
+                  )}
                </div>
 
                <div className="flex-1 flex flex-col justify-center">
-                   <div className="space-y-1">
-                      <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Agente</p>
-                      <h1 className="text-3xl font-black text-white uppercase tracking-wider">{profile.name}</h1>
-                      <p className="text-[9px] text-[var(--accent-color)] font-bold uppercase tracking-[0.5em] mt-2 opacity-80 flex items-center gap-2">
-                         <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] animate-pulse"></span>
-                         Status: Ativo
-                      </p>
-                   </div>
+                  {isEditingName ? (
+                     <div className="space-y-3 animate-in fade-in duration-300">
+                        <input 
+                           autoFocus
+                           type="text" 
+                           value={tempName}
+                           onChange={(e) => setTempName(e.target.value)}
+                           className="w-full bg-[#121212] border border-zinc-700 text-white font-black uppercase text-xl tracking-widest p-3 rounded focus:border-[var(--accent-color)] outline-none placeholder:text-zinc-700"
+                           placeholder="CODINOME"
+                        />
+                        <div className="flex gap-2">
+                           <button onClick={saveName} className="flex-1 bg-[var(--accent-color)] text-black py-2 rounded text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2">
+                             <Check size={12} /> Salvar
+                           </button>
+                           <button onClick={cancelEdit} className="flex-1 bg-zinc-800 text-zinc-400 py-2 rounded text-[10px] font-black uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-2">
+                             <X size={12} /> Cancelar
+                           </button>
+                        </div>
+                     </div>
+                  ) : (
+                     <div className="space-y-1">
+                        <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Agente</p>
+                        <h1 className="text-3xl font-black text-white uppercase tracking-wider">{profile.name}</h1>
+                        <p className="text-[9px] text-[var(--accent-color)] font-bold uppercase tracking-[0.5em] mt-2 opacity-80 flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] animate-pulse"></span>
+                           Status: Ativo
+                        </p>
+                     </div>
+                  )}
                </div>
 
                <div className="mt-6 pt-6 border-t border-zinc-900 flex items-center justify-between">
