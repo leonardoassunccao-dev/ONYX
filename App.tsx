@@ -58,8 +58,7 @@ const LoginScreen: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-[#000000] flex flex-col items-center justify-center p-8">
       <OnyxLogo size={64} className="mb-8" />
-      <h1 className="text-2xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase mb-2">ONYX SYSTEM</h1>
-      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-12">Acesso Restrito // Identificação Requerida</p>
+      <h1 className="text-2xl font-black text-[#E8E8E8] tracking-[0.2em] uppercase mb-12">Bem vindo ao ONYX</h1>
       
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         {isRegistering && (
