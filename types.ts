@@ -7,19 +7,19 @@ export interface SyncMetadata {
 }
 
 export interface Profile extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   name: string;
 }
 
 export interface Settings extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   meetingMode: boolean;
   greetingsEnabled: boolean;
   accent: string;
 }
 
 export interface Quote extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   text: string;
   author?: string;
   isCustom: boolean;
