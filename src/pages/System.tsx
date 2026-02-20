@@ -18,7 +18,7 @@ interface SystemProps {
   onNavigate?: (section: any) => void;
 }
 
-const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
+const SystemPage: React.FC<SystemProps> = ({ profile, settings, onNavigate }) => {
   const { user, logout } = useAuth();
   const { quotes, addQuote, deleteQuote, source: quoteSource } = useQuotes();
   
@@ -253,6 +253,52 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings }) => {
             </Card>
          </div>
       </section>
+
+      <div className="md:hidden mt-8">
+        <h3 className="text-xs tracking-[0.3em] text-neutral-500 mb-4">
+          ATALHOS
+        </h3>
+
+        <div className="grid grid-cols-2 gap-4">
+          
+          <button
+            onClick={() => onNavigate?.("pacer")}
+            className="group relative bg-neutral-900 border border-neutral-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-yellow-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.15)]"
+          >
+            <div className="text-sm text-neutral-400 mb-1">Ritmo</div>
+            <div className="text-lg font-semibold text-white">Pacer</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("reading")}
+            className="group relative bg-neutral-900 border border-neutral-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-yellow-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.15)]"
+          >
+            <div className="text-sm text-neutral-400 mb-1">Conhecimento</div>
+            <div className="text-lg font-semibold text-white">Leitura</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("study")}
+            className="group relative bg-neutral-900 border border-neutral-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-yellow-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.15)]"
+          >
+            <div className="text-sm text-neutral-400 mb-1">Evolução</div>
+            <div className="text-lg font-semibold text-white">Estudos</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("work")}
+            className="group relative bg-neutral-900 border border-neutral-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-yellow-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.15)]"
+          >
+            <div className="text-sm text-neutral-400 mb-1">Execução</div>
+            <div className="text-lg font-semibold text-white">Trabalho</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+        </div>
+      </div>
       
       {/* Debug Footer */}
       <div className="text-center opacity-30">
