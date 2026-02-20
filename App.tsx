@@ -195,7 +195,6 @@ const MainApp: React.FC = () => {
     const mobileNavItems = [
       { id: 'today', label: 'Hoje', icon: LayoutDashboard },
       { id: 'finance', label: 'Finanças', icon: DollarSign },
-      { id: 'routine', label: 'Rotina', icon: RefreshCw },
       { id: 'system', label: 'Sistema', icon: SettingsIcon },
     ];
 

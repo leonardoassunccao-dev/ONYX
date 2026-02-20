@@ -186,6 +186,59 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
             </Card>
          </div>
       </section>
+
+      <div className="mt-8">
+        <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+           ATALHOS
+        </h3>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={() => onNavigate?.("pacer")}
+            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+          >
+            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Ritmo</div>
+            <div className="text-lg font-black text-white uppercase tracking-tight">Pacer</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("reading")}
+            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+          >
+            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Conhecimento</div>
+            <div className="text-lg font-black text-white uppercase tracking-tight">Leitura</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("study")}
+            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+          >
+            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Evolução</div>
+            <div className="text-lg font-black text-white uppercase tracking-tight">Estudos</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("work")}
+            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+          >
+            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Execução</div>
+            <div className="text-lg font-black text-white uppercase tracking-tight">Trabalho</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("routine")}
+            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+          >
+            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Hábito</div>
+            <div className="text-lg font-black text-white uppercase tracking-tight">Rotina</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
