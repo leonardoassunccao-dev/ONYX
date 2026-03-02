@@ -21,7 +21,7 @@ const WorkPage: React.FC<{ settings: Settings }> = ({ settings }) => {
     <div className="space-y-6">
       <header className="flex justify-between items-center">
         <h2 className="text-2xl font-black text-[#E8E8E8] tracking-widest uppercase">Operações</h2>
-        <button onClick={() => setShowForm(!showForm)} className="bg-[#C0C0C0] hover:bg-[#D4D4D8] text-[#0b0b0d] p-3 rounded-md transition-all">
+        <button onClick={() => setShowForm(!showForm)} className="bg-[#C0C0C0] hover:bg-[#D4D4D8] text-[#0b0b0d] p-3 rounded-xl transition-all">
           <Plus size={20} />
         </button>
       </header>
@@ -33,18 +33,18 @@ const WorkPage: React.FC<{ settings: Settings }> = ({ settings }) => {
               autoFocus
               type="text" 
               placeholder="Objetivo da Missão"
-              className="flex-1 bg-[#121212] border border-zinc-800 rounded-md p-3 text-white focus:border-[#C0C0C0] outline-none text-sm font-bold"
+              className="flex-1 bg-[#121212] border border-zinc-800 rounded-xl p-3 text-white focus:border-[#C0C0C0] outline-none text-sm font-bold"
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
             />
-            <button type="submit" className="bg-[#C0C0C0] text-[#0b0b0d] px-6 font-black tracking-widest rounded-md text-xs uppercase hover:bg-[#D4D4D8]">Add</button>
+            <button type="submit" className="bg-[#C0C0C0] text-[#0b0b0d] px-6 font-black tracking-widest rounded-xl text-xs uppercase hover:bg-[#D4D4D8]">Add</button>
           </form>
         </Card>
       )}
 
       <div className="space-y-2">
         {tasks.map(task => (
-          <div key={task.id} className="bg-[#0B0B0B] border border-[#1a1a1a] p-4 rounded-lg flex items-center gap-4 group transition-all hover:border-[#C0C0C0]/20">
+          <div key={task.id} className="bg-[#0B0B0B] border border-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4 group transition-all hover:border-[#C0C0C0]/20">
             <button onClick={() => toggleTask(task)} className="text-[#C0C0C0]">
               {task.done ? <CheckCircle2 size={20} /> : <Circle size={20} className="text-zinc-700" />}
             </button>

@@ -6,7 +6,6 @@ import { Section, Settings, Profile } from './types';
 import { applyTheme } from './utils/theme';
 import { 
   LayoutDashboard, 
-  DollarSign, 
   Dumbbell, 
   BookOpen, 
   GraduationCap, 
@@ -27,7 +26,6 @@ import QuickActionFAB from './components/QuickActionFAB';
 import QuickActionModal from './components/QuickActionModal';
 
 import TodayPage from './pages/Today';
-import FinancePage from './pages/Finance';
 import PacerPage from './pages/Pacer';
 import ReadingPage from './pages/Reading';
 import StudyPage from './pages/Study';
@@ -239,7 +237,6 @@ const MainApp: React.FC = () => {
   const renderContent = () => {
     switch (activeSection) {
       case 'today': return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;
-      case 'finance': return <FinancePage settings={settings} />;
       case 'pacer': return <PacerPage settings={settings} />;
       case 'reading': return <ReadingPage settings={settings} />;
       case 'study': return <StudyPage settings={settings} />;
@@ -254,7 +251,6 @@ const MainApp: React.FC = () => {
 
   const navItems = [
       { id: 'today', label: 'HOJE', icon: LayoutDashboard },
-      { id: 'finance', label: 'FINANÇAS', icon: DollarSign },
       { id: 'goals', label: 'METAS', icon: Target },
       { id: 'projects', label: 'PROJETOS', icon: Folder },
       { id: 'pacer', label: 'PACER', icon: Dumbbell },
@@ -316,12 +312,6 @@ const MainApp: React.FC = () => {
                  </button>
                ))}
              </nav>
-
-             <div className="mt-auto pt-6 border-t border-[#1a1a1a]">
-               <p className="text-[10px] font-bold text-[#E8E8E8] uppercase tracking-[0.2em] truncate">
-                 {profile.name}
-               </p>
-             </div>
            </div>
          </aside>
        )}
@@ -350,11 +340,6 @@ const MainApp: React.FC = () => {
                 </button>
               ))}
             </nav>
-            <div className="mt-auto p-8 border-t border-[#1a1a1a] flex justify-center items-center overflow-hidden">
-              <p className="text-[11px] font-bold text-[#E8E8E8] uppercase tracking-[0.2em] truncate">
-                {profile.name}
-              </p>
-            </div>
           </aside>
         )}
 

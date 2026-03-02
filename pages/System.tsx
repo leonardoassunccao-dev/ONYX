@@ -56,73 +56,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
       </header>
 
       <section className="space-y-6">
-         <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-            <User size={12} className="text-[var(--accent-color)]" /> Identidade & Acesso
-         </h3>
-         
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="flex flex-col justify-between min-h-[180px]">
-               <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-2">
-                    <User size={14} className="text-[var(--accent-color)]" />
-                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Identificação</span>
-                  </div>
-                  {!isEditingName && (
-                     <button 
-                       onClick={() => setIsEditingName(true)} 
-                       className="text-[9px] font-bold text-zinc-600 hover:text-[var(--accent-color)] uppercase tracking-widest transition-colors flex items-center gap-1"
-                     >
-                       <Edit2 size={10} /> Editar
-                     </button>
-                  )}
-               </div>
-
-               <div className="flex-1 flex flex-col justify-center">
-                  {isEditingName ? (
-                     <div className="space-y-3 animate-in fade-in duration-300">
-                        <input 
-                           autoFocus
-                           type="text" 
-                           value={tempName}
-                           onChange={(e) => setTempName(e.target.value)}
-                           className="w-full bg-[#121212] border border-zinc-700 text-white font-black uppercase text-xl tracking-widest p-3 rounded focus:border-[var(--accent-color)] outline-none placeholder:text-zinc-700"
-                           placeholder="CODINOME"
-                        />
-                        <div className="flex gap-2">
-                           <button onClick={saveName} className="flex-1 bg-[var(--accent-color)] text-black py-2 rounded text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all flex items-center justify-center gap-2">
-                             <Check size={12} /> Salvar
-                           </button>
-                           <button onClick={cancelEdit} className="flex-1 bg-zinc-800 text-zinc-400 py-2 rounded text-[10px] font-black uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-2">
-                             <X size={12} /> Cancelar
-                           </button>
-                        </div>
-                     </div>
-                  ) : (
-                     <div className="space-y-1">
-                        <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Agente</p>
-                        <h1 className="text-3xl font-black text-white uppercase tracking-wider">{profile.name}</h1>
-                        <p className="text-[9px] text-[var(--accent-color)] font-bold uppercase tracking-[0.5em] mt-2 opacity-80 flex items-center gap-2">
-                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-color)] animate-pulse"></span>
-                           Status: Ativo
-                        </p>
-                     </div>
-                  )}
-               </div>
-
-               <div className="mt-6 pt-6 border-t border-zinc-900 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Monitor className={settings.meetingMode ? "text-[var(--accent-color)]" : "text-zinc-600"} size={18} />
-                    <span className="text-[10px] font-black text-zinc-400 tracking-widest uppercase">Modo Reunião</span>
-                  </div>
-                  <button 
-                    onClick={toggleMeetingMode}
-                    className={`w-10 h-5 rounded-full transition-all relative ${settings.meetingMode ? 'bg-[var(--accent-color)]' : 'bg-zinc-800'}`}
-                  >
-                    <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${settings.meetingMode ? 'left-5.5 bg-[#0b0b0d]' : 'left-0.5 bg-zinc-500'}`} />
-                  </button>
-               </div>
-            </Card>
-
             <Card className="flex flex-col justify-between">
                <div className="flex justify-between items-start mb-6">
                   <div className="flex items-center gap-2">
@@ -134,7 +68,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
                <div className="flex-1 flex flex-col justify-center gap-4">
                   <button 
                     onClick={() => handleThemeChange('gold')}
-                    className="flex items-center justify-between p-3 rounded border bg-[#0B0B0B] hover:bg-[#121212] transition-all group border-[#D4AF37]/30 hover:border-[#D4AF37]"
+                    className="flex items-center justify-between p-3 rounded-xl border bg-[#0B0B0B] hover:bg-[#121212] transition-all group border-[#D4AF37]/30 hover:border-[#D4AF37]"
                   >
                      <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded-full bg-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.4)]"></div>
@@ -145,7 +79,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
 
                   <button 
                     onClick={() => handleThemeChange('silver')}
-                    className="flex items-center justify-between p-3 rounded border bg-[#0B0B0B] hover:bg-[#121212] transition-all group border-[#D1D5DB]/30 hover:border-[#D1D5DB]"
+                    className="flex items-center justify-between p-3 rounded-xl border bg-[#0B0B0B] hover:bg-[#121212] transition-all group border-[#D1D5DB]/30 hover:border-[#D1D5DB]"
                   >
                      <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded-full bg-[#D1D5DB] shadow-[0_0_10px_rgba(209,213,219,0.4)]"></div>
@@ -156,7 +90,7 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
 
                   <button 
                     onClick={() => handleThemeChange('emerald')}
-                    className="flex items-center justify-between p-3 rounded border bg-[#0B0B0B] hover:bg-[#121212] transition-all group border-[#34D399]/30 hover:border-[#34D399]"
+                    className="flex items-center justify-between p-3 rounded-xl border bg-[#0B0B0B] hover:bg-[#121212] transition-all group border-[#34D399]/30 hover:border-[#34D399]"
                   >
                      <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded-full bg-[#34D399] shadow-[0_0_10px_rgba(52,211,153,0.4)]"></div>
@@ -170,15 +104,24 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
             <Card accentBorder className="flex flex-col justify-between">
                <div className="flex justify-between items-start">
                   <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <Monitor className={settings.meetingMode ? "text-[var(--accent-color)]" : "text-zinc-600"} size={18} />
+                      <span className="text-[10px] font-black text-zinc-400 tracking-widest uppercase">Modo Reunião</span>
+                      <button 
+                        onClick={toggleMeetingMode}
+                        className={`w-10 h-5 rounded-full transition-all relative ml-2 ${settings.meetingMode ? 'bg-[var(--accent-color)]' : 'bg-zinc-800'}`}
+                      >
+                        <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${settings.meetingMode ? 'left-5.5 bg-[#0b0b0d]' : 'left-0.5 bg-zinc-500'}`} />
+                      </button>
+                    </div>
                     <p className="text-[9px] font-black text-[var(--accent-color)] uppercase tracking-widest mb-1">Status: Conectado</p>
                     <p className="text-sm font-bold text-white font-mono">{user?.email}</p>
-                    <p className="text-[8px] text-zinc-500 mt-2 uppercase tracking-wide">Cloud Database Active</p>
                   </div>
                   <Shield size={20} className="text-[var(--accent-color)]" />
                </div>
                <button 
                  onClick={logout}
-                 className="flex items-center justify-center gap-2 bg-[#121212] border border-zinc-800 text-zinc-400 py-3 rounded text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-zinc-600 transition-all mt-6"
+                 className="flex items-center justify-center gap-2 bg-[#121212] border border-zinc-800 text-zinc-400 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-zinc-600 transition-all mt-6"
                >
                  <LogOut size={14} />
                  Encerrar Sessão
@@ -186,76 +129,6 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
             </Card>
          </div>
       </section>
-
-      <div className="mt-8">
-        <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-           ATALHOS
-        </h3>
-
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            onClick={() => onNavigate?.("pacer")}
-            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-          >
-            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Ritmo</div>
-            <div className="text-lg font-black text-white uppercase tracking-tight">Pacer</div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-
-          <button
-            onClick={() => onNavigate?.("reading")}
-            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-          >
-            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Conhecimento</div>
-            <div className="text-lg font-black text-white uppercase tracking-tight">Leitura</div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-
-          <button
-            onClick={() => onNavigate?.("study")}
-            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-          >
-            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Evolução</div>
-            <div className="text-lg font-black text-white uppercase tracking-tight">Estudos</div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-
-          <button
-            onClick={() => onNavigate?.("work")}
-            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-          >
-            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Execução</div>
-            <div className="text-lg font-black text-white uppercase tracking-tight">Trabalho</div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-
-          <button
-            onClick={() => onNavigate?.("routine")}
-            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-          >
-            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Hábito</div>
-            <div className="text-lg font-black text-white uppercase tracking-tight">Rotina</div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-          <button
-            onClick={() => onNavigate?.("goals")}
-            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-          >
-            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Objetivos</div>
-            <div className="text-lg font-black text-white uppercase tracking-tight">Metas</div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-
-          <button
-            onClick={() => onNavigate?.("projects")}
-            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
-          >
-            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Iniciativas</div>
-            <div className="text-lg font-black text-white uppercase tracking-tight">Projetos</div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

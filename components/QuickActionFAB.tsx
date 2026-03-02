@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, CheckSquare, FileText, Target, DollarSign, Folder, X } from 'lucide-react';
+import { Plus, CheckSquare, FileText, Target, Folder, X } from 'lucide-react';
 
 interface QuickActionFABProps {
   onActionSelect: (actionId: string) => void;
@@ -24,7 +24,6 @@ const QuickActionFAB: React.FC<QuickActionFABProps> = ({ onActionSelect }) => {
     { id: 'task', label: 'Nova Tarefa', icon: CheckSquare, shortcut: 'N' },
     { id: 'note', label: 'Nova Nota', icon: FileText, shortcut: 'T' },
     { id: 'goal', label: 'Nova Meta', icon: Target, shortcut: 'M' },
-    { id: 'expense', label: 'Nova Despesa', icon: DollarSign, shortcut: 'D' },
     { id: 'project', label: 'Novo Projeto', icon: Folder, shortcut: 'P' },
   ];
 

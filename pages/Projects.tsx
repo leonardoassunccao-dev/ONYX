@@ -28,14 +28,14 @@ const ProjectsPage: React.FC = () => {
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 bg-[var(--accent-color)] text-black px-4 py-2 rounded font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors"
+          className="flex items-center gap-2 bg-[var(--accent-color)] text-black px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors"
         >
           <Plus size={16} /> Novo Projeto
         </button>
       </header>
 
       {isAdding && (
-        <form onSubmit={handleAdd} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-xl flex gap-4 animate-in slide-in-from-top-4">
+        <form onSubmit={handleAdd} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-2xl flex gap-4 animate-in slide-in-from-top-4">
           <input
             type="text"
             value={newTitle}
@@ -44,7 +44,7 @@ const ProjectsPage: React.FC = () => {
             className="flex-1 bg-transparent border-b border-zinc-800 pb-2 text-white outline-none focus:border-[var(--accent-color)] transition-colors"
             autoFocus
           />
-          <button type="submit" className="bg-[var(--accent-color)] text-black px-4 py-2 rounded font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors">
+          <button type="submit" className="bg-[var(--accent-color)] text-black px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors">
             Adicionar
           </button>
           <button type="button" onClick={() => setIsAdding(false)} className="text-zinc-500 hover:text-white transition-colors">
@@ -55,13 +55,13 @@ const ProjectsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {projects.length === 0 ? (
-          <div className="col-span-full text-center py-12 border border-zinc-800 border-dashed rounded-xl">
+          <div className="col-span-full text-center py-12 border border-zinc-800 border-dashed rounded-2xl">
             <Folder size={48} className="mx-auto text-zinc-700 mb-4" />
             <p className="text-zinc-500 font-medium">Nenhum projeto ativo no momento.</p>
           </div>
         ) : (
           projects.map(project => (
-            <div key={project.id} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-xl hover:border-[var(--accent-color)]/50 transition-colors group flex flex-col justify-between relative">
+            <div key={project.id} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-2xl hover:border-[var(--accent-color)]/50 transition-colors group flex flex-col justify-between relative">
               <button 
                 onClick={() => deleteProject(project.id!)}
                 className="absolute top-4 right-4 text-zinc-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"

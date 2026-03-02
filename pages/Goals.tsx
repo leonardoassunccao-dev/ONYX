@@ -65,14 +65,14 @@ const GoalsPage: React.FC = () => {
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 bg-[var(--accent-color)] text-black px-4 py-2 rounded font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors"
+          className="flex items-center gap-2 bg-[var(--accent-color)] text-black px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors"
         >
           <Plus size={16} /> Nova Meta
         </button>
       </header>
 
       {isAdding && (
-        <form onSubmit={handleAdd} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-xl flex gap-4 animate-in slide-in-from-top-4 flex-wrap">
+        <form onSubmit={handleAdd} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-2xl flex gap-4 animate-in slide-in-from-top-4 flex-wrap">
           <input
             type="text"
             value={newTitle}
@@ -88,7 +88,7 @@ const GoalsPage: React.FC = () => {
             onChange={(e) => setNewDeadline(e.target.value)}
             className="bg-transparent border-b border-zinc-800 pb-2 text-zinc-400 outline-none focus:border-[var(--accent-color)] transition-colors"
           />
-          <button type="submit" className="bg-[var(--accent-color)] text-black px-4 py-2 rounded font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors">
+          <button type="submit" className="bg-[var(--accent-color)] text-black px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors">
             Adicionar
           </button>
           <button type="button" onClick={() => setIsAdding(false)} className="text-zinc-500 hover:text-white transition-colors">
@@ -106,7 +106,7 @@ const GoalsPage: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex flex-col items-start px-4 py-2 rounded-lg transition-all ${
+            className={`flex flex-col items-start px-4 py-2 rounded-xl transition-all ${
               activeTab === tab.id 
                 ? 'bg-zinc-900 border border-zinc-700' 
                 : 'hover:bg-zinc-900/50 border border-transparent text-zinc-500'
@@ -122,13 +122,13 @@ const GoalsPage: React.FC = () => {
 
       <div className="grid gap-4">
         {currentGoals.length === 0 ? (
-          <div className="text-center py-12 border border-zinc-800 border-dashed rounded-xl">
+          <div className="text-center py-12 border border-zinc-800 border-dashed rounded-2xl">
             <Target size={48} className="mx-auto text-zinc-700 mb-4" />
             <p className="text-zinc-500 font-medium">Nenhuma meta definida para este período.</p>
           </div>
         ) : (
           currentGoals.map(goal => (
-            <div key={goal.id} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-xl hover:border-zinc-700 transition-colors group relative">
+            <div key={goal.id} className="bg-[#0B0B0D] border border-zinc-800 p-6 rounded-2xl hover:border-zinc-700 transition-colors group relative">
               <button 
                 onClick={() => handleDelete(goal.id as string)}
                 className="absolute top-4 right-4 text-zinc-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"

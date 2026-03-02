@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, CheckSquare, FileText, Target, Folder, DollarSign } from 'lucide-react';
+import { Search, X, CheckSquare, FileText, Target, Folder } from 'lucide-react';
 
 interface GlobalSearchProps {
   isOpen: boolean;

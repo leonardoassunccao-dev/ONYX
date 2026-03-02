@@ -1,5 +1,5 @@
 
-export type Section = 'today' | 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general' | 'system' | 'goals' | 'projects';
+export type Section = 'today' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general' | 'system' | 'goals' | 'projects';
 
 export interface SyncMetadata {
   updatedAt?: number; // Timestamp for conflict resolution
@@ -52,24 +52,9 @@ export interface Task extends SyncMetadata {
   id?: string | number;
   title: string;
   date: string; // YYYY-MM-DD
-  section: 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general';
+  section: 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general';
   priority: 'low' | 'med' | 'high';
   done: boolean;
-}
-
-export interface FinanceTransaction extends SyncMetadata {
-  id?: string | number;
-  type: 'income' | 'expense';
-  amount: number;
-  category: string;
-  date: string;
-  note?: string;
-}
-
-export interface FixedExpense extends SyncMetadata {
-  id?: string | number;
-  title: string;
-  amount: number;
 }
 
 export interface PacerWorkout extends SyncMetadata {
@@ -122,9 +107,9 @@ export interface WorkTask extends SyncMetadata {
 }
 
 // Unified Goal System
-export type GoalSession = 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general';
+export type GoalSession = 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general';
 export type GoalType = 'daily' | 'weekly' | 'monthly' | 'one_time';
-export type MetricType = 'count' | 'minutes' | 'pages' | 'currency' | 'boolean';
+export type MetricType = 'count' | 'minutes' | 'pages' | 'boolean';
 
 export interface SessionGoal extends SyncMetadata {
   id?: string | number;

@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import { 
-  Profile, Settings, Habit, HabitCheckin, Task, FinanceTransaction, FixedExpense,
+  Profile, Settings, Habit, HabitCheckin, Task,
   PacerWorkout, Book, ReadingSession, StudySession, WorkTask,
   SessionGoal, GoalCheckin, GoalTemplate, Quote, AppState
 } from './types';
@@ -110,8 +110,6 @@ export class OnyxDatabase extends Dexie {
   habits!: Table<Habit>;
   habit_checkins!: Table<HabitCheckin>;
   tasks!: Table<Task>;
-  finance_transactions!: Table<FinanceTransaction>;
-  fixed_expenses!: Table<FixedExpense>;
   pacer_workouts!: Table<PacerWorkout>;
   books!: Table<Book>;
   reading_sessions!: Table<ReadingSession>;
@@ -133,8 +131,6 @@ export class OnyxDatabase extends Dexie {
       habits: '++id, active, updatedAt',
       habit_checkins: '++id, habitId, date, updatedAt',
       tasks: '++id, date, section, done, updatedAt',
-      finance_transactions: '++id, date, type, updatedAt',
-      fixed_expenses: '++id, updatedAt',
       pacer_workouts: '++id, plannedDate, done, updatedAt',
       books: '++id, status, createdAt, updatedAt',
       reading_sessions: '++id, bookId, date, updatedAt',
@@ -218,11 +214,6 @@ export async function ensureInitialData() {
         { session: 'work', title: 'Concluir 3 tarefas/dia', type: 'daily', metricType: 'count', defaultTargetValue: 3, isBuiltIn: true, defaultDaysOfWeek: [1,2,3,4,5] },
         { session: 'work', title: 'Planejar o dia (check)', type: 'daily', metricType: 'boolean', defaultTargetValue: 1, isBuiltIn: true, defaultDaysOfWeek: [1,2,3,4,5] },
         { session: 'work', title: 'Organizar pendências (15 min)', type: 'daily', metricType: 'minutes', defaultTargetValue: 15, isBuiltIn: true, defaultDaysOfWeek: [1,2,3,4,5] },
-        // Finance
-        { session: 'finance', title: 'Registrar todos os gastos do dia', type: 'daily', metricType: 'boolean', defaultTargetValue: 1, isBuiltIn: true, defaultDaysOfWeek: [0,1,2,3,4,5,6] },
-        { session: 'finance', title: 'Gastar no máximo R$ 50/dia', type: 'daily', metricType: 'currency', defaultTargetValue: 50, isBuiltIn: true, defaultDaysOfWeek: [0,1,2,3,4,5,6] },
-        { session: 'finance', title: 'Economizar R$ 300/mês', type: 'monthly', metricType: 'currency', defaultTargetValue: 300, isBuiltIn: true },
-        { session: 'finance', title: 'Revisar orçamento semanal', type: 'weekly', metricType: 'boolean', defaultTargetValue: 1, isBuiltIn: true },
       ];
       
       const defaultTemplates: GoalTemplate[] = rawTemplates.map(t => ({ ...t, updatedAt: now }));

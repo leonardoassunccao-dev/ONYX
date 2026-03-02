@@ -9,7 +9,6 @@ export function useGoals(sessionFilter?: GoalSession) {
   const [goals, setGoals] = useState<SessionGoal[]>([]);
   const [checkins, setCheckins] = useState<any[]>([]);
   const [templates, setTemplates] = useState<GoalTemplate[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -27,9 +26,7 @@ export function useGoals(sessionFilter?: GoalSession) {
       setTemplates(sessionFilter ? all.filter((t: any) => t.session === sessionFilter) : all);
     });
     
-    const unsubTrans = onSnapshot(collection(db, 'users', user.uid, 'finance_transactions'), (snap) => setTransactions(snap.docs.map(d => d.data())));
-
-    return () => { unsubGoals(); unsubCheckins(); unsubTemplates(); unsubTrans(); };
+    return () => { unsubGoals(); unsubCheckins(); unsubTemplates(); };
   }, [user, sessionFilter]);
 
   const getISOWeek = (date: Date) => {
@@ -43,29 +40,8 @@ export function useGoals(sessionFilter?: GoalSession) {
 
   const calculateProgress = (goal: SessionGoal) => {
     let current = 0;
-    
-    if (goal.session === 'finance' && goal.metricType === 'currency' && goal.title.toLowerCase().includes('gastar')) {
-      const filteredTxs = transactions.filter((t: any) => t.type === 'expense');
-      
-      if (goal.type === 'daily') {
-        current = filteredTxs.filter((t: any) => t.date === todayStr).reduce((s, t) => s + t.amount, 0);
-      } else if (goal.type === 'weekly') {
-        const today = new Date();
-        const currentWeek = getISOWeek(today);
-        current = filteredTxs.filter((t: any) => {
-          const d = new Date(t.date);
-          return getISOWeek(d) === currentWeek;
-        }).reduce((s, t) => s + t.amount, 0);
-      } else if (goal.type === 'monthly') {
-        const currentMonth = todayStr.substring(0, 7);
-        current = filteredTxs.filter((t: any) => t.date && t.date.startsWith(currentMonth)).reduce((s, t) => s + t.amount, 0);
-      }
-      
-      const isMet = current <= goal.targetValue;
-      return { current, percent: Math.min((current / goal.targetValue) * 100, 100), isMet, isExceeded: current > goal.targetValue };
-    }
-
     const goalCheckins = checkins.filter(c => c.goalId === goal.id);
+    
     if (goal.type === 'daily') {
       current = goalCheckins.filter(c => c.date === todayStr).reduce((sum, c) => sum + c.value, 0);
     } else if (goal.type === 'weekly') {

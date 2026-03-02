@@ -46,8 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await migrateTable('settings', 'settings');
       await migrateTable('habits', 'habits');
       await migrateTable('habit_checkins', 'habit_checkins');
-      await migrateTable('finance_transactions', 'finance_transactions');
-      await migrateTable('fixed_expenses', 'fixed_expenses');
       await migrateTable('pacer_workouts', 'pacer_workouts');
       await migrateTable('books', 'books');
       await migrateTable('reading_sessions', 'reading_sessions');

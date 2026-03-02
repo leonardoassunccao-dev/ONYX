@@ -23,7 +23,7 @@ const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
     <div className="space-y-6">
       <header className="flex justify-between items-center">
         <h2 className="text-2xl font-black text-[#E8E8E8] tracking-widest uppercase">Pacer Ops</h2>
-        <button onClick={() => setShowForm(!showForm)} className="bg-[#C0C0C0] hover:bg-[#D4D4D8] text-[#0b0b0d] p-3 rounded-md transition-all">
+        <button onClick={() => setShowForm(!showForm)} className="bg-[#C0C0C0] hover:bg-[#D4D4D8] text-[#0b0b0d] p-3 rounded-xl transition-all">
           <Plus size={20} />
         </button>
       </header>
@@ -32,7 +32,7 @@ const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
         <Card accentBorder title="Protocolo de Treino">
           <form onSubmit={handleAdd} className="space-y-4">
             <select 
-              className="w-full bg-[#121212] border border-zinc-800 rounded-md p-3 text-white focus:border-[#C0C0C0] outline-none text-sm uppercase font-black"
+              className="w-full bg-[#121212] border border-zinc-800 rounded-xl p-3 text-white focus:border-[#C0C0C0] outline-none text-sm uppercase font-black"
               value={formData.type}
               onChange={e => setFormData({...formData, type: e.target.value as any})}
             >
@@ -44,7 +44,7 @@ const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
             </select>
             <input 
               type="date" 
-              className="w-full bg-[#121212] border border-zinc-800 rounded-md p-3 text-white focus:border-[#C0C0C0] outline-none text-sm"
+              className="w-full bg-[#121212] border border-zinc-800 rounded-xl p-3 text-white focus:border-[#C0C0C0] outline-none text-sm"
               value={formData.plannedDate}
               onChange={e => setFormData({...formData, plannedDate: e.target.value})}
             />
@@ -55,14 +55,14 @@ const PacerPage: React.FC<{ settings: Settings }> = ({ settings }) => {
               value={formData.durationMin}
               onChange={e => setFormData({...formData, durationMin: parseInt(e.target.value)})}
             />
-            <button type="submit" className="w-full bg-[#C0C0C0] text-[#0b0b0d] font-black tracking-widest py-3 rounded-md text-xs uppercase hover:bg-[#D4D4D8]">Confirmar Missão</button>
+            <button type="submit" className="w-full bg-[#C0C0C0] text-[#0b0b0d] font-black tracking-widest py-3 rounded-xl text-xs uppercase hover:bg-[#D4D4D8]">Confirmar Missão</button>
           </form>
         </Card>
       )}
 
       <div className="space-y-2">
         {workouts.map(w => (
-          <div key={w.id} className="flex items-center gap-4 bg-[#0B0B0B] border border-[#1a1a1a] p-4 rounded-lg group transition-all hover:border-[#C0C0C0]/30">
+          <div key={w.id} className="flex items-center gap-4 bg-[#0B0B0B] border border-[#1a1a1a] p-4 rounded-2xl group transition-all hover:border-[#C0C0C0]/30">
             <button onClick={() => toggleWorkout(w)} className="text-[#C0C0C0]">
               {w.done ? <CheckCircle2 size={20} /> : <Circle size={20} className="text-zinc-700" />}
             </button>

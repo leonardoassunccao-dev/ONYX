@@ -21,7 +21,7 @@ const StudyPage: React.FC<{ settings: Settings }> = ({ settings }) => {
     <div className="space-y-6">
       <header className="flex justify-between items-center">
         <h2 className="text-2xl font-black text-[#E8E8E8] tracking-widest uppercase">Estudos</h2>
-        <button onClick={() => setShowForm(!showForm)} className="bg-[#C0C0C0] hover:bg-[#D4D4D8] text-[#0b0b0d] p-3 rounded-md transition-all">
+        <button onClick={() => setShowForm(!showForm)} className="bg-[#C0C0C0] hover:bg-[#D4D4D8] text-[#0b0b0d] p-3 rounded-xl transition-all">
           <Plus size={20} />
         </button>
       </header>
@@ -33,7 +33,7 @@ const StudyPage: React.FC<{ settings: Settings }> = ({ settings }) => {
               autoFocus
               type="text" 
               placeholder="Assunto / Protocolo"
-              className="w-full bg-[#121212] border border-zinc-800 rounded-md p-3 text-white focus:border-[#C0C0C0] outline-none text-sm font-bold"
+              className="w-full bg-[#121212] border border-zinc-800 rounded-xl p-3 text-white focus:border-[#C0C0C0] outline-none text-sm font-bold"
               value={formData.subject}
               onChange={e => setFormData({...formData, subject: e.target.value})}
             />
@@ -42,20 +42,20 @@ const StudyPage: React.FC<{ settings: Settings }> = ({ settings }) => {
               <input 
                 type="number" 
                 placeholder="Minutos"
-                className="flex-1 bg-[#121212] border border-zinc-800 rounded-md p-3 text-white focus:border-[#C0C0C0] outline-none text-sm"
+                className="flex-1 bg-[#121212] border border-zinc-800 rounded-xl p-3 text-white focus:border-[#C0C0C0] outline-none text-sm"
                 value={formData.minutes}
                 onChange={e => setFormData({...formData, minutes: parseInt(e.target.value)})}
               />
             </div>
-            <button type="submit" className="w-full bg-[#C0C0C0] text-[#0b0b0d] font-black tracking-widest py-3 rounded-md text-xs uppercase hover:bg-[#D4D4D8]">Log Session</button>
+            <button type="submit" className="w-full bg-[#C0C0C0] text-[#0b0b0d] font-black tracking-widest py-3 rounded-xl text-xs uppercase hover:bg-[#D4D4D8]">Log Session</button>
           </form>
         </Card>
       )}
 
       <div className="space-y-2">
         {sessions.map(s => (
-          <div key={s.id} className="bg-[#0B0B0B] border border-[#1a1a1a] p-4 rounded-lg flex items-center gap-4 group transition-all hover:border-[#C0C0C0]/20">
-            <div className="p-3 bg-zinc-800 text-[#C0C0C0] rounded-md">
+          <div key={s.id} className="bg-[#0B0B0B] border border-[#1a1a1a] p-4 rounded-2xl flex items-center gap-4 group transition-all hover:border-[#C0C0C0]/20">
+            <div className="p-3 bg-zinc-800 text-[#C0C0C0] rounded-xl">
               <GraduationCap size={18} />
             </div>
             <div className="flex-1">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckSquare, FileText, Target, DollarSign, Folder } from 'lucide-react';
+import { X, CheckSquare, FileText, Target, Folder } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, addDoc } from 'firebase/firestore';
@@ -38,7 +38,6 @@ const QuickActionModal: React.FC<QuickActionModalProps> = ({ isOpen, onClose, in
     { id: 'task', label: 'Tarefa', icon: CheckSquare },
     { id: 'note', label: 'Nota', icon: FileText },
     { id: 'goal', label: 'Meta', icon: Target },
-    { id: 'expense', label: 'Despesa', icon: DollarSign },
     { id: 'project', label: 'Projeto', icon: Folder },
   ];
 
@@ -73,19 +72,6 @@ const QuickActionModal: React.FC<QuickActionModalProps> = ({ isOpen, onClose, in
           createdAt: Date.now(),
           done: false,
           active: true
-        });
-      } else if (action === 'expense') {
-        const amountMatch = title.match(/(\d+(?:[.,]\d+)?)/);
-        const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '.')) : 0;
-        const desc = title.replace(amountMatch ? amountMatch[0] : '', '').trim() || 'Despesa Rápida';
-        
-        await addDoc(collection(db, 'users', user.uid, 'finance_transactions'), {
-          description: desc,
-          amount: amount,
-          type: 'expense',
-          category: 'Outros',
-          date: new Date().toISOString().split('T')[0],
-          updatedAt: Date.now()
         });
       } else if (action === 'project') {
         await addDoc(collection(db, 'users', user.uid, 'projects'), {

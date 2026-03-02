@@ -78,7 +78,7 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
         </div>
         <button 
           onClick={() => setShowHabitForm(!showHabitForm)}
-          className="bg-[#C0C0C0] text-[#0b0b0d] p-3 rounded-md hover:bg-white transition-all flex items-center gap-2"
+          className="bg-[#C0C0C0] text-[#0b0b0d] p-3 rounded-xl hover:bg-white transition-all flex items-center gap-2"
         >
           {showHabitForm ? <X size={20} /> : <Plus size={20} />}
         </button>
@@ -92,13 +92,13 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
               autoFocus
               type="text" 
               placeholder="NOME DO HÁBITO" 
-              className="w-full bg-[#121212] border border-zinc-800 p-3 rounded text-xs text-white uppercase font-bold tracking-widest outline-none focus:border-[#C0C0C0]"
+              className="w-full bg-[#121212] border border-zinc-800 p-3 rounded-xl text-xs text-white uppercase font-bold tracking-widest outline-none focus:border-[#C0C0C0]"
               value={newHabit.title}
               onChange={e => setNewHabit({...newHabit, title: e.target.value})}
             />
             <div className="grid grid-cols-2 gap-2">
               <select 
-                className="bg-[#121212] border border-zinc-800 p-3 rounded text-[10px] font-black uppercase text-zinc-400 outline-none"
+                className="bg-[#121212] border border-zinc-800 p-3 rounded-xl text-[10px] font-black uppercase text-zinc-400 outline-none"
                 value={newHabit.type}
                 onChange={e => setNewHabit({...newHabit, type: e.target.value as any})}
               >
@@ -110,12 +110,12 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
                 type="number" 
                 placeholder="META"
                 disabled={newHabit.type === 'boolean'}
-                className="w-full bg-[#121212] border border-zinc-800 p-3 rounded text-xs text-white outline-none disabled:opacity-30"
+                className="w-full bg-[#121212] border border-zinc-800 p-3 rounded-xl text-xs text-white outline-none disabled:opacity-30"
                 value={newHabit.targetValue}
                 onChange={e => setNewHabit({...newHabit, targetValue: parseInt(e.target.value)})}
               />
             </div>
-            <button type="submit" className="w-full bg-[#C0C0C0] text-[#0b0b0d] py-3 rounded text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all">Ativar Protocolo</button>
+            <button type="submit" className="w-full bg-[#C0C0C0] text-[#0b0b0d] py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all">Ativar Protocolo</button>
           </form>
         </Card>
       )}
@@ -200,7 +200,7 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
                 {habit.type === 'boolean' ? (
                   <button 
                     onClick={() => toggleBooleanHabit(habit.id!)}
-                    className={`w-full py-2 border rounded text-[9px] font-black uppercase tracking-widest transition-all ${
+                    className={`w-full py-2 border rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
                       stats.isMet ? 'bg-[#C0C0C0]/10 border-transparent text-[#C0C0C0]' : 'bg-transparent border-zinc-900 text-zinc-600 hover:text-white'
                     }`}
                   >
@@ -211,18 +211,18 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
                     <form onSubmit={(e) => { e.preventDefault(); handleHabitCheckIn(habit.id!); }} className="flex gap-1">
                       <input 
                         autoFocus type="number" 
-                        className="flex-1 bg-[#121212] border border-zinc-800 rounded px-2 py-1 text-[10px] text-white outline-none"
+                        className="flex-1 bg-[#121212] border border-zinc-800 rounded-lg px-2 py-1 text-[10px] text-white outline-none"
                         value={habitCheckInVal}
                         onChange={e => setHabitCheckInVal(e.target.value)}
                       />
-                      <button type="submit" className="bg-[#C0C0C0] text-[#0b0b0d] px-3 rounded text-[9px] font-black uppercase">Ok</button>
+                      <button type="submit" className="bg-[#C0C0C0] text-[#0b0b0d] px-3 rounded-lg text-[9px] font-black uppercase">Ok</button>
                       <button type="button" onClick={() => setShowCheckInHabit(null)} className="text-zinc-600 px-2 text-[9px] font-black uppercase">X</button>
                     </form>
                   ) : (
                     <button 
                       onClick={() => setShowCheckInHabit(habit.id!)}
-                      className={`w-full py-2 border rounded text-[9px] font-black uppercase tracking-widest transition-all ${
-                        stats.isMet ? 'bg-[#C0C0C0]/10 border-transparent text-[#C0C0C0]' : 'bg-transparent border-zinc-800 text-zinc-600 hover:text-white'
+                      className={`w-full py-2 border rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                        stats.isMet ? 'bg-[#C0C0C0]/10 border-transparent text-[#C0C0C0]' : 'bg-transparent border-zinc-900 text-zinc-600 hover:text-white'
                       }`}
                     >
                       Check-In
@@ -233,13 +233,13 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
             );
           })}
           {todayHabits.length === 0 && !showHabitForm && (
-             <div className="col-span-full py-16 border border-dashed border-[#1a1a1a] rounded-lg text-center bg-[#0B0B0B]/10">
+             <div className="col-span-full py-16 border border-dashed border-[#1a1a1a] rounded-2xl text-center bg-[#0B0B0B]/10">
                 <LayoutGrid size={32} className="mx-auto text-zinc-800 mb-4" />
                 <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2">Nenhum hábito configurado.</h4>
                 <p className="text-[8px] text-zinc-800 font-black uppercase tracking-widest mb-6">Sua rotina está em branco. Inicie o mapeamento tático.</p>
                 <button 
                   onClick={() => setShowHabitForm(true)}
-                  className="bg-[#121212] border border-zinc-800 px-6 py-2.5 rounded text-[9px] font-black uppercase tracking-widest text-[#C0C0C0] hover:border-[#C0C0C0]/40 transition-all"
+                  className="bg-[#121212] border border-zinc-800 px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#C0C0C0] hover:border-[#C0C0C0]/40 transition-all"
                 >
                   + Criar Hábito
                 </button>
