@@ -12,7 +12,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({ session }) => {
   const { goals, templates, calculateProgress, addGoal, checkin, deleteGoal, createFromTemplate } = useGoals(session);
   const [showAdd, setShowAdd] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [showCheckIn, setShowCheckIn] = useState<number | null>(null);
+  const [showCheckIn, setShowCheckIn] = useState<string | number | null>(null);
   const [checkInVal, setCheckInVal] = useState('');
   const [toast, setToast] = useState<string | null>(null);
 
@@ -54,7 +54,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({ session }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleCheckIn = async (goalId: number) => {
+  const handleCheckIn = async (goalId: string | number) => {
     const val = parseFloat(checkInVal);
     if (isNaN(val)) return;
     await checkin(goalId, val);

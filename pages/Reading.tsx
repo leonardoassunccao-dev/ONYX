@@ -11,7 +11,7 @@ const ReadingPage: React.FC<{ settings: Settings }> = ({ settings }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newPagesTotal, setNewPagesTotal] = useState('');
   
-  const [loggingBookId, setLoggingBookId] = useState<number | null>(null);
+  const [loggingBookId, setLoggingBookId] = useState<string | number | null>(null);
   const [logPages, setLogPages] = useState('');
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -23,7 +23,7 @@ const ReadingPage: React.FC<{ settings: Settings }> = ({ settings }) => {
     setShowForm(false);
   };
 
-  const handleLog = async (e: React.FormEvent, bookId: number) => {
+  const handleLog = async (e: React.FormEvent, bookId: string | number) => {
     e.preventDefault();
     const p = parseInt(logPages);
     if (isNaN(p) || p <= 0) return;

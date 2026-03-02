@@ -299,12 +299,12 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
               </div>
            )}
          </div>
-         <h1 className={`text-3xl md:text-4xl font-black text-[#f5f5f5] uppercase tracking-tight mb-8 mt-12 md:mt-0 transition-all duration-700 transform ${bootStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>{greeting}, <span className="text-[var(--accent-color)]">{profile.name}.</span></h1>
+         <h1 className={`text-4xl md:text-5xl font-black text-[#f5f5f5] uppercase tracking-tight mb-8 mt-12 md:mt-0 transition-all duration-700 transform ${bootStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>{greeting}, <span className="text-[var(--accent-color)]">{profile.name}.</span></h1>
          <div className={`max-w-2xl mx-auto relative py-6 transition-all duration-700 transform ${bootStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-[var(--accent-color)]/30"></div>
             <div className="space-y-3 px-4">
-              <p className="text-sm md:text-lg font-medium text-zinc-400 tracking-wide leading-relaxed font-serif italic opacity-90">{finalQuoteText}</p>
-              <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em] pt-2">{finalQuoteAuthor}</p>
+              <p className="text-lg md:text-xl font-medium text-zinc-300 tracking-wide leading-relaxed font-serif italic opacity-90">{finalQuoteText}</p>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] pt-2">{finalQuoteAuthor}</p>
             </div>
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-[1px] bg-[var(--accent-color)]/30"></div>
          </div>
@@ -312,34 +312,34 @@ const TodayPage: React.FC<TodayProps> = ({ profile, settings, onEnterFocus, onNa
 
       <section className={`max-w-4xl mx-auto w-full pt-4 pb-8 px-4 md:px-0 transition-all duration-700 transform ${bootStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         <div className="flex items-center justify-between mb-8 border-b border-[#1a1a1a] pb-4">
-           <h3 className="text-xs font-black text-[#a0a0a0] uppercase tracking-[0.3em] flex items-center gap-2"><Activity size={14} className="text-[var(--accent-color)]" /> Status Operacional</h3>
-           <div className="flex flex-col items-end"><span className="text-[8px] font-black text-[#7a7a7a] uppercase tracking-widest">ÍNDICE DE EVOLUÇÃO</span><span className="text-lg font-mono font-bold text-[var(--accent-color)]">{evolutionIndex}%</span></div>
+           <h3 className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em] flex items-center gap-2"><Activity size={14} className="text-[var(--accent-color)]" /> Status Operacional</h3>
+           <div className="flex flex-col items-end"><span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">ÍNDICE DE EVOLUÇÃO</span><span className="text-xl font-mono font-bold text-[var(--accent-color)]">{evolutionIndex}%</span></div>
         </div>
         <div className="space-y-6">
           <div className="group">
              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-3"><CreditCard size={16} className="text-[#7a7a7a]" /><span className="text-[10px] font-bold text-[#a0a0a0] uppercase tracking-[0.2em] group-hover:text-white transition-colors">Salário (Gasto)</span></div>
+                <div className="flex items-center gap-3"><CreditCard size={16} className="text-zinc-500 group-hover:text-[var(--accent-color)] transition-colors" /><span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] group-hover:text-zinc-200 transition-colors">Salário (Gasto)</span></div>
                 <span className={`text-sm font-mono font-bold ${anim.salary > 100 ? 'text-red-600' : 'text-[#f5f5f5]'}`}>{Math.round(anim.salary)}%</span>
              </div>
              <div className="h-[3px] w-full bg-zinc-900 rounded-sm overflow-hidden"><div className={`h-full transition-all duration-1000 ${anim.salary > 70 && anim.salary <= 100 ? 'shadow-[0_0_8px_rgba(var(--accent-rgb),0.6)]' : ''} ${anim.salary > 100 ? 'bg-red-800' : 'bg-[var(--accent-color)]'}`} style={{ width: `${Math.min(anim.salary, 100)}%` }} /></div>
           </div>
           <div className="group">
              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-3"><Dumbbell size={16} className="text-[#7a7a7a]" /><span className="text-[10px] font-bold text-[#a0a0a0] uppercase tracking-[0.2em] group-hover:text-white transition-colors">Físico</span></div>
+                <div className="flex items-center gap-3"><Dumbbell size={16} className="text-zinc-500 group-hover:text-[var(--accent-color)] transition-colors" /><span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] group-hover:text-zinc-200 transition-colors">Físico</span></div>
                 <span className="text-sm font-mono font-bold text-[#f5f5f5]">{Math.round(anim.physical)}%</span>
              </div>
              <div className="h-[3px] w-full bg-zinc-900 rounded-sm overflow-hidden"><div className={`h-full bg-[var(--accent-color)] transition-all duration-1000 ${anim.physical > 70 ? 'shadow-[0_0_8px_rgba(var(--accent-rgb),0.6)]' : ''}`} style={{ width: `${anim.physical}%` }} /></div>
           </div>
           <div className="group">
              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-3"><Brain size={16} className="text-[#7a7a7a]" /><span className="text-[10px] font-bold text-[#a0a0a0] uppercase tracking-[0.2em] group-hover:text-white transition-colors">Mente</span></div>
+                <div className="flex items-center gap-3"><Brain size={16} className="text-zinc-500 group-hover:text-[var(--accent-color)] transition-colors" /><span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] group-hover:text-zinc-200 transition-colors">Mente</span></div>
                 <span className="text-sm font-mono font-bold text-[#f5f5f5]">{Math.round(anim.mind)}%</span>
              </div>
              <div className="h-[3px] w-full bg-zinc-900 rounded-sm overflow-hidden"><div className={`h-full bg-[var(--accent-color)] transition-all duration-1000 ${anim.mind > 70 ? 'shadow-[0_0_8px_rgba(var(--accent-rgb),0.6)]' : ''}`} style={{ width: `${anim.mind}%` }} /></div>
           </div>
           <div className="group">
              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-3"><Landmark size={16} className="text-[#7a7a7a]" /><span className="text-[10px] font-bold text-[#a0a0a0] uppercase tracking-[0.2em] group-hover:text-white transition-colors">Patrimônio</span></div>
+                <div className="flex items-center gap-3"><Landmark size={16} className="text-zinc-500 group-hover:text-[var(--accent-color)] transition-colors" /><span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] group-hover:text-zinc-200 transition-colors">Patrimônio</span></div>
                 <span className="text-sm font-mono font-bold text-[#f5f5f5]">{anim.patrimony.toFixed(1)}%</span>
              </div>
              <div className="h-[3px] w-full bg-zinc-900 rounded-sm overflow-hidden"><div className={`h-full bg-[var(--accent-color)] transition-all duration-1000 ${anim.patrimony > 70 ? 'shadow-[0_0_8px_rgba(var(--accent-rgb),0.6)]' : ''}`} style={{ width: `${Math.min(anim.patrimony, 100)}%` }} /></div>

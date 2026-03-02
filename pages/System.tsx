@@ -237,6 +237,23 @@ const SystemPage: React.FC<SystemProps> = ({ profile, settings, onRefresh, onNav
             <div className="text-lg font-black text-white uppercase tracking-tight">Rotina</div>
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </button>
+          <button
+            onClick={() => onNavigate?.("goals")}
+            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+          >
+            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Objetivos</div>
+            <div className="text-lg font-black text-white uppercase tracking-tight">Metas</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
+
+          <button
+            onClick={() => onNavigate?.("projects")}
+            className="group relative bg-[#0B0B0B] border border-zinc-800 rounded-xl p-5 text-left transition-all duration-300 hover:border-[var(--accent-color)] hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]"
+          >
+            <div className="text-[10px] text-zinc-500 mb-1 uppercase font-bold tracking-wider">Iniciativas</div>
+            <div className="text-lg font-black text-white uppercase tracking-tight">Projetos</div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </button>
         </div>
       </div>
     </div>

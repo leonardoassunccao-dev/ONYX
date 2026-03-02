@@ -1,5 +1,5 @@
 
-export type Section = 'today' | 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general' | 'system';
+export type Section = 'today' | 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general' | 'system' | 'goals' | 'projects';
 
 export interface SyncMetadata {
   updatedAt?: number; // Timestamp for conflict resolution
@@ -31,7 +31,7 @@ export interface AppState extends SyncMetadata {
 }
 
 export interface Habit extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   title: string;
   type: 'count' | 'minutes' | 'boolean';
   targetValue: number;
@@ -42,14 +42,14 @@ export interface Habit extends SyncMetadata {
 }
 
 export interface HabitCheckin extends SyncMetadata {
-  id?: number;
-  habitId: number;
+  id?: string | number;
+  habitId: string | number;
   date: string; // YYYY-MM-DD
   value: number;
 }
 
 export interface Task extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   title: string;
   date: string; // YYYY-MM-DD
   section: 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general';
@@ -58,7 +58,7 @@ export interface Task extends SyncMetadata {
 }
 
 export interface FinanceTransaction extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   type: 'income' | 'expense';
   amount: number;
   category: string;
@@ -67,13 +67,13 @@ export interface FinanceTransaction extends SyncMetadata {
 }
 
 export interface FixedExpense extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   title: string;
   amount: number;
 }
 
 export interface PacerWorkout extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   type: 'run' | 'rope' | 'gym' | 'tennis' | 'other';
   plannedDate: string;
   completedDateOptional?: string;
@@ -83,7 +83,7 @@ export interface PacerWorkout extends SyncMetadata {
 }
 
 export interface Book extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   title: string;
   authorOptional?: string;
   status: 'reading' | 'paused' | 'done';
@@ -96,8 +96,8 @@ export interface Book extends SyncMetadata {
 }
 
 export interface ReadingSession extends SyncMetadata {
-  id?: number;
-  bookId: number;
+  id?: string | number;
+  bookId: string | number;
   date: string; // YYYY-MM-DD
   pages: number; // Mandatory for counting
   minutesOptional?: number;
@@ -105,7 +105,7 @@ export interface ReadingSession extends SyncMetadata {
 }
 
 export interface StudySession extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   subject: string;
   date: string;
   minutes: number;
@@ -113,7 +113,7 @@ export interface StudySession extends SyncMetadata {
 }
 
 export interface WorkTask extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   title: string;
   date: string;
   done: boolean;
@@ -122,12 +122,12 @@ export interface WorkTask extends SyncMetadata {
 }
 
 // Unified Goal System
-export type GoalSession = 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine';
+export type GoalSession = 'finance' | 'pacer' | 'reading' | 'study' | 'work' | 'routine' | 'general';
 export type GoalType = 'daily' | 'weekly' | 'monthly' | 'one_time';
 export type MetricType = 'count' | 'minutes' | 'pages' | 'currency' | 'boolean';
 
 export interface SessionGoal extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   session: GoalSession;
   title: string;
   description?: string;
@@ -144,15 +144,15 @@ export interface SessionGoal extends SyncMetadata {
 }
 
 export interface GoalCheckin extends SyncMetadata {
-  id?: number;
-  goalId: number;
+  id?: string | number;
+  goalId: string | number;
   date: string; // YYYY-MM-DD
   value: number;
   notes?: string;
 }
 
 export interface GoalTemplate extends SyncMetadata {
-  id?: number;
+  id?: string | number;
   session: GoalSession;
   title: string;
   type: GoalType;

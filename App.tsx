@@ -13,12 +13,18 @@ import {
   Briefcase, 
   Settings as SettingsIcon,
   RefreshCw,
+  Target,
+  Folder,
+  Menu,
+  X,
 } from 'lucide-react';
 
 import OnyxLogo from './components/OnyxLogo';
 import SplashScreen from './components/SplashScreen';
 import FocusUltra from './components/FocusUltra';
-import FullscreenExitButton from './components/FullscreenExitButton';
+import GlobalSearch from './components/GlobalSearch';
+import QuickActionFAB from './components/QuickActionFAB';
+import QuickActionModal from './components/QuickActionModal';
 
 import TodayPage from './pages/Today';
 import FinancePage from './pages/Finance';
@@ -28,6 +34,8 @@ import StudyPage from './pages/Study';
 import WorkPage from './pages/Work';
 import RoutinePage from './pages/Routine';
 import SystemPage from './pages/System';
+import GoalsPage from './pages/Goals';
+import ProjectsPage from './pages/Projects';
 
 const LoginScreen: React.FC = () => {
   const { login, register } = useAuth();
@@ -118,6 +126,15 @@ const MainApp: React.FC = () => {
   
   const [showSplash, setShowSplash] = useState(false);
   const [isFocusUltra, setIsFocusUltra] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [quickActionType, setQuickActionType] = useState<string | null>(null);
+
+  const openQuickAction = (type: string | null = null) => {
+    setQuickActionType(type);
+    setIsQuickActionOpen(true);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -164,6 +181,58 @@ const MainApp: React.FC = () => {
   const exitFocusUltra = () => setIsFocusUltra(false);
   const refreshAppData = () => {};
 
+  // Handle Escape and Double Tap for Meeting Mode
+  useEffect(() => {
+    let lastTap = 0;
+    const handleDoubleTap = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        if (settings.meetingMode) toggleMeetingMode();
+      }
+      lastTap = now;
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore shortcuts if user is typing in an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        return;
+      }
+
+      if (e.key === 'Escape' && settings.meetingMode) {
+        toggleMeetingMode();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+      
+      // Global quick actions
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && !isSearchOpen && !isQuickActionOpen) {
+        if (e.key.toLowerCase() === 'n') {
+          e.preventDefault();
+          openQuickAction('task');
+        } else if (e.key.toLowerCase() === 'm') {
+          e.preventDefault();
+          openQuickAction('goal');
+        } else if (e.key.toLowerCase() === 'p') {
+          e.preventDefault();
+          openQuickAction('project');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    if (settings.meetingMode) {
+      window.addEventListener('touchstart', handleDoubleTap);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleDoubleTap);
+    };
+  }, [settings.meetingMode, isSearchOpen, isQuickActionOpen]);
+
   if (isFocusUltra) return <FocusUltra onExit={exitFocusUltra} />;
   if (showSplash) return <SplashScreen onFinish={handleSplashFinish} />;
 
@@ -176,6 +245,8 @@ const MainApp: React.FC = () => {
       case 'study': return <StudyPage settings={settings} />;
       case 'work': return <WorkPage settings={settings} />;
       case 'routine': return <RoutinePage settings={settings} />;
+      case 'goals': return <GoalsPage />;
+      case 'projects': return <ProjectsPage />;
       case 'system': return <SystemPage profile={profile} settings={settings} onRefresh={refreshAppData} onNavigate={setActiveSection} />;
       default: return <TodayPage profile={profile} settings={settings} onRefresh={refreshAppData} onEnterFocus={enterFocusUltra} onNavigate={setActiveSection} onToggleMeetingMode={toggleMeetingMode} />;
     }
@@ -184,6 +255,8 @@ const MainApp: React.FC = () => {
   const navItems = [
       { id: 'today', label: 'HOJE', icon: LayoutDashboard },
       { id: 'finance', label: 'FINANÇAS', icon: DollarSign },
+      { id: 'goals', label: 'METAS', icon: Target },
+      { id: 'projects', label: 'PROJETOS', icon: Folder },
       { id: 'pacer', label: 'PACER', icon: Dumbbell },
       { id: 'reading', label: 'LEITURA', icon: BookOpen },
       { id: 'study', label: 'ESTUDOS', icon: GraduationCap },
@@ -192,19 +265,67 @@ const MainApp: React.FC = () => {
       { id: 'system', label: 'SISTEMA', icon: SettingsIcon },
     ];
 
-    const mobileNavItems = [
-      { id: 'today', label: 'Hoje', icon: LayoutDashboard },
-      { id: 'finance', label: 'Finanças', icon: DollarSign },
-      { id: 'system', label: 'Sistema', icon: SettingsIcon },
-    ];
-
     const meetingMode = settings.meetingMode;
     const containerClasses = meetingMode 
       ? "fixed inset-0 z-[9999] bg-[#000000] overflow-y-auto h-screen w-screen" 
-      : "min-h-screen flex flex-col md:flex-row bg-[#000000] transition-all duration-300 text-base";
+      : "min-h-screen flex flex-col md:flex-row bg-[#000000] transition-all duration-300 text-base relative overflow-x-hidden";
 
   return (
     <div className={containerClasses}>
+       {/* Mobile Sidebar Overlay */}
+       {!meetingMode && isMobileMenuOpen && (
+         <div 
+           className="md:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] transition-opacity duration-300"
+           onClick={() => setIsMobileMenuOpen(false)}
+         />
+       )}
+
+       {/* Mobile Sidebar Drawer */}
+       {!meetingMode && (
+         <aside className={`md:hidden fixed top-0 left-0 h-full w-72 bg-[#050505] border-r border-[#1a1a1a] z-[70] transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+           <div className="p-6 flex flex-col h-full">
+             <div className="flex items-center justify-between mb-10">
+               <div className="flex items-center gap-4">
+                 <OnyxLogo size={38} />
+                 <h1 className="text-lg font-extrabold tracking-[0.08em] text-[#E8E8E8] uppercase leading-none">ONYX</h1>
+               </div>
+               <button 
+                 onClick={() => setIsMobileMenuOpen(false)}
+                 className="p-2 text-zinc-500 hover:text-white transition-colors"
+               >
+                 <X size={24} />
+               </button>
+             </div>
+             
+             <nav className="flex-1 space-y-1 overflow-y-auto">
+               {navItems.map((item) => (
+                 <button
+                   key={item.id}
+                   onClick={() => {
+                     setActiveSection(item.id as Section);
+                     setIsMobileMenuOpen(false);
+                   }}
+                   className={`w-full flex items-center gap-3 px-4 py-4 rounded-lg transition-all duration-250 group ${
+                     activeSection === item.id 
+                     ? 'bg-[#121212] text-[var(--accent-color)] border-l-2 border-[var(--accent-color)]' 
+                     : 'text-zinc-400 hover:bg-[#121212] hover:text-zinc-200'
+                   }`}
+                 >
+                   <item.icon size={20} className={activeSection === item.id ? 'text-[var(--accent-color)]' : 'text-zinc-500'} />
+                   <span className="font-semibold text-[12px] tracking-wider uppercase">{item.label}</span>
+                 </button>
+               ))}
+             </nav>
+
+             <div className="mt-auto pt-6 border-t border-[#1a1a1a]">
+               <p className="text-[10px] font-bold text-[#E8E8E8] uppercase tracking-[0.2em] truncate">
+                 {profile.name}
+               </p>
+             </div>
+           </div>
+         </aside>
+       )}
+
        {!meetingMode && (
           <aside className="hidden md:flex flex-col w-64 bg-[#050505] border-r border-[#1a1a1a] p-4 sticky top-0 h-screen z-20">
             <div className="mb-14 px-4 flex items-center gap-5">
@@ -218,13 +339,13 @@ const MainApp: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id as Section)}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg transition-all duration-200 ${
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-lg transition-all duration-250 group ${
                     activeSection === item.id 
-                    ? 'bg-[#121212] text-[var(--accent-color)] border-l-2 border-[var(--accent-color)]' 
-                    : 'text-zinc-500 hover:bg-[#121212] hover:text-zinc-300'
+                    ? 'bg-[#121212] text-[var(--accent-color)] border-l-2 border-[var(--accent-color)] shadow-[inset_4px_0_10px_rgba(212,175,55,0.05)]' 
+                    : 'text-zinc-400 hover:bg-[#121212] hover:text-zinc-200 hover:translate-x-1'
                   }`}
                 >
-                  <item.icon size={18} className={activeSection === item.id ? 'text-[var(--accent-color)]' : 'text-zinc-600'} />
+                  <item.icon size={18} className={`transition-colors duration-250 ${activeSection === item.id ? 'text-[var(--accent-color)]' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
                   <span className="font-semibold text-[11px] tracking-wider uppercase">{item.label}</span>
                 </button>
               ))}
@@ -237,17 +358,21 @@ const MainApp: React.FC = () => {
           </aside>
         )}
 
-        <main className={`flex-1 ${meetingMode ? 'h-full w-full' : 'overflow-y-auto pb-24 md:pb-0'}`}>
+        <main className={`flex-1 ${meetingMode ? 'h-full w-full' : 'overflow-y-auto'}`}>
           <div className={`${meetingMode ? 'h-full w-full' : 'max-w-6xl mx-auto p-4 md:p-8 flex flex-col min-h-full'}`}>
              {!meetingMode && (
               <div className="md:hidden flex items-center justify-between mb-8 pb-4 border-b border-[#1a1a1a]">
-                 <div className="flex items-center gap-5">
-                    <OnyxLogo size={38} />
-                    <div className="flex flex-col">
-                      <h1 className="text-lg font-extrabold tracking-[0.08em] text-[#E8E8E8] uppercase leading-none">ONYX</h1>
-                    </div>
+                 <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => setIsMobileMenuOpen(true)}
+                      className="p-2 -ml-2 text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <Menu size={24} />
+                    </button>
+                    <OnyxLogo size={32} />
+                    <h1 className="text-lg font-extrabold tracking-[0.08em] text-[#E8E8E8] uppercase leading-none">ONYX</h1>
                  </div>
-                 <div className="text-[10px] text-zinc-600 font-black uppercase tracking-widest border border-zinc-800 px-2 py-1 rounded">
+                 <div className="text-[9px] text-zinc-600 font-black uppercase tracking-widest border border-zinc-800 px-2 py-1 rounded">
                     ONLINE
                  </div>
               </div>
@@ -262,31 +387,9 @@ const MainApp: React.FC = () => {
           </div>
         </main>
 
-        {!meetingMode && (
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#000000] border-t border-[#1a1a1a] flex justify-around items-center h-16 z-50 pb-safe">
-            {mobileNavItems.map((item) => {
-              const isActive = activeSection === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id as Section)}
-                  className="flex-1 flex flex-col items-center justify-center gap-1.5 h-full active:scale-95 transition-transform"
-                >
-                  <item.icon 
-                    size={24} 
-                    strokeWidth={2}
-                    className={`transition-colors duration-300 ${isActive ? 'text-white' : 'text-[#8a8a8a]'}`} 
-                  />
-                  <span className={`text-[10px] font-medium tracking-wide transition-colors duration-300 ${isActive ? 'text-white' : 'text-[#8a8a8a]'}`}>
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        )}
-        
-        {!isFocusUltra && <FullscreenExitButton meetingMode={meetingMode} onExit={() => {}} />}
+        {!meetingMode && <QuickActionFAB onActionSelect={openQuickAction} />}
+        <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+        <QuickActionModal isOpen={isQuickActionOpen} onClose={() => setIsQuickActionOpen(false)} initialAction={quickActionType} />
     </div>
   );
 }

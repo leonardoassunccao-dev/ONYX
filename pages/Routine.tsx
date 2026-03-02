@@ -33,7 +33,7 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
     active: true
   });
 
-  const [showCheckInHabit, setShowCheckInHabit] = useState<number | null>(null);
+  const [showCheckInHabit, setShowCheckInHabit] = useState<string | number | null>(null);
   const [habitCheckInVal, setHabitCheckInVal] = useState('');
   
   const todayStr = new Date().toISOString().split('T')[0];
@@ -53,7 +53,7 @@ const RoutinePage: React.FC<{ settings: Settings }> = ({ settings }) => {
     };
   }, [habits, todayHabits]);
 
-  const handleHabitCheckIn = async (habitId: number) => {
+  const handleHabitCheckIn = async (habitId: string | number) => {
     const val = parseFloat(habitCheckInVal);
     if (isNaN(val)) return;
     await addCheckin(habitId, val);

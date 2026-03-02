@@ -27,13 +27,16 @@ export function useWork() {
   };
 
   const toggleTask = async (task: WorkTask) => {
-    if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid, 'work_tasks', task.id as unknown as string), { done: !task.done });
+    if (!user || !task.id) return;
+    await updateDoc(doc(db, 'users', user.uid, 'work_tasks', task.id.toString()), { 
+      done: !task.done,
+      updatedAt: Date.now()
+    });
   };
 
-  const deleteTask = async (id: any) => {
-    if (!user) return;
-    await deleteDoc(doc(db, 'users', user.uid, 'work_tasks', id));
+  const deleteTask = async (id: string | number) => {
+    if (!user || !id) return;
+    await deleteDoc(doc(db, 'users', user.uid, 'work_tasks', id.toString()));
   };
 
   return { tasks, addTask, toggleTask, deleteTask };

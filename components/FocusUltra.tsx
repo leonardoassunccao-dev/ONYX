@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQuotes } from '../hooks/useQuotes';
-import { Maximize2, Minimize2, X } from 'lucide-react';
+import { Maximize2, Minimize2, X, Timer, Clock } from 'lucide-react';
 
 interface FocusUltraProps {
   onExit: () => void;
@@ -14,6 +14,13 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
   const [showHud, setShowHud] = useState(false);
   const [hudTimeout, setHudTimeout] = useState<any>(null);
   
+  // Pomodoro State
+  const [mode, setMode] = useState<'clock' | 'pomodoro'>('clock');
+  const [pomodoroTime, setPomodoroTime] = useState(25 * 60); // 25 minutes
+  const [isPomodoroRunning, setIsPomodoroRunning] = useState(false);
+  const [pomodoroSession, setPomodoroSession] = useState<'work' | 'break'>('work');
+  const [completedSessions, setCompletedSessions] = useState(0);
+  
   const { dailyQuote } = useQuotes();
 
   // Clock Tick
@@ -24,11 +31,42 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Keyboard Shortcuts
+  // Pomodoro Tick
   useEffect(() => {
+    let timer: any;
+    if (isPomodoroRunning && pomodoroTime > 0) {
+      timer = setInterval(() => {
+        setPomodoroTime(prev => prev - 1);
+      }, 1000);
+    } else if (isPomodoroRunning && pomodoroTime === 0) {
+      // Session ended
+      if (pomodoroSession === 'work') {
+        setCompletedSessions(prev => prev + 1);
+        setPomodoroSession('break');
+        setPomodoroTime(5 * 60); // 5 minutes break
+      } else {
+        setPomodoroSession('work');
+        setPomodoroTime(25 * 60); // 25 minutes work
+      }
+      setIsPomodoroRunning(false);
+    }
+    return () => clearInterval(timer);
+  }, [isPomodoroRunning, pomodoroTime, pomodoroSession]);
+
+  // Keyboard Shortcuts & Double Tap
+  useEffect(() => {
+    let lastTap = 0;
+    const handleDoubleTap = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        exitFocusMode();
+      }
+      lastTap = now;
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      // SHIFT + ESC to Exit
-      if (e.shiftKey && e.key === 'Escape') {
+      // ESC to Exit
+      if (e.key === 'Escape') {
         exitFocusMode();
       }
       
@@ -41,10 +79,24 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
       if (e.key.toLowerCase() === 'h') {
         toggleQuote();
       }
+
+      // P to toggle Pomodoro Mode
+      if (e.key.toLowerCase() === 'p') {
+        setMode(prev => prev === 'clock' ? 'pomodoro' : 'clock');
+      }
+
+      // Space to play/pause Pomodoro
+      if (e.code === 'Space' && mode === 'pomodoro') {
+        setIsPomodoroRunning(prev => !prev);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleDoubleTap);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleDoubleTap);
+    };
   }, [showQuote]);
 
   // Mouse HUD Logic
@@ -83,6 +135,10 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
   const seconds = time.getSeconds().toString().padStart(2, '0');
   const isEvenSecond = time.getSeconds() % 2 === 0;
 
+  // Format Pomodoro Time
+  const pomodoroMins = Math.floor(pomodoroTime / 60).toString().padStart(2, '0');
+  const pomodoroSecs = (pomodoroTime % 60).toString().padStart(2, '0');
+
   return (
     <div 
       className="fixed inset-0 z-[99999] bg-black text-white flex flex-col items-center justify-center cursor-default select-none"
@@ -94,21 +150,42 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
       >
         <div className="flex items-center gap-6 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 bg-[#121214] px-4 py-2 rounded-full border border-zinc-800">
            <span className="hidden md:flex items-center gap-2"><Maximize2 size={10} /> F: Tela Cheia</span>
-           <span className="hidden md:flex items-center gap-2"><X size={10} /> Shift+ESC: Sair</span>
-           <span className="text-[#D4AF37]">Modo Foco Ultra</span>
+           <span className="hidden md:flex items-center gap-2"><Timer size={10} /> P: Modo Pomodoro</span>
+           {mode === 'pomodoro' && <span className="hidden md:flex items-center gap-2">ESPAÇO: Play/Pause</span>}
+           <span className="text-[var(--accent-color)]">{mode === 'clock' ? 'Modo Foco Ultra' : 'Modo Pomodoro'}</span>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex flex-col items-center gap-12">
-        {/* Giant Clock */}
-        <div className="font-mono text-6xl md:text-9xl lg:text-[10rem] font-bold text-[#f5f5f5] tracking-widest flex items-center gap-2 md:gap-4 leading-none filter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-           <span>{hours}</span>
-           <span className="text-[#D4AF37] transition-opacity duration-300" style={{ opacity: isEvenSecond ? 1 : 0.35 }}>:</span>
-           <span>{minutes}</span>
-           <span className="text-[#D4AF37] transition-opacity duration-300" style={{ opacity: isEvenSecond ? 1 : 0.35 }}>:</span>
-           <span>{seconds}</span>
-        </div>
+        {mode === 'clock' ? (
+          <div className="font-mono text-6xl md:text-9xl lg:text-[10rem] font-bold text-[#f5f5f5] tracking-widest flex items-center gap-2 md:gap-4 leading-none filter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+             <span>{hours}</span>
+             <span className="text-[var(--accent-color)] transition-opacity duration-300" style={{ opacity: isEvenSecond ? 1 : 0.35 }}>:</span>
+             <span>{minutes}</span>
+             <span className="text-[var(--accent-color)] transition-opacity duration-300" style={{ opacity: isEvenSecond ? 1 : 0.35 }}>:</span>
+             <span>{seconds}</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-4 mb-8 text-[10px] font-black uppercase tracking-[0.3em]">
+              <span className={pomodoroSession === 'work' ? 'text-[var(--accent-color)]' : 'text-zinc-600'}>Foco</span>
+              <span className="text-zinc-800">|</span>
+              <span className={pomodoroSession === 'break' ? 'text-blue-400' : 'text-zinc-600'}>Pausa</span>
+            </div>
+            <div className={`font-mono text-8xl md:text-[12rem] font-bold tracking-widest flex items-center gap-4 leading-none filter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] ${isPomodoroRunning ? 'text-white' : 'text-zinc-500'}`}>
+               <span>{pomodoroMins}</span>
+               <span className={pomodoroSession === 'work' ? 'text-[var(--accent-color)]' : 'text-blue-400'}>:</span>
+               <span>{pomodoroSecs}</span>
+            </div>
+            <div className="mt-12 flex items-center gap-8">
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Sessões Concluídas</span>
+                <span className="text-2xl font-mono font-bold text-[var(--accent-color)]">{completedSessions}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quote */}
         {showQuote && dailyQuote && (
@@ -124,14 +201,6 @@ const FocusUltra: React.FC<FocusUltraProps> = ({ onExit }) => {
            </div>
         )}
       </div>
-
-      {/* Subtle Bottom Status - Fallback Exit Trigger */}
-      <button 
-        onClick={exitFocusMode}
-        className="fixed bottom-8 text-[8px] font-black text-[#1a1a1a] uppercase tracking-[0.5em] hover:text-[#C9A227] transition-colors cursor-pointer active:scale-95 bg-transparent border-none outline-none"
-      >
-         Onyx System Active
-      </button>
     </div>
   );
 };
